@@ -3,111 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博谈影像档案库 V55-PRO</title>
+    <title>博谈影像档案库 V56-Final</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary-color: #ff4b4b; --sidebar-bg: #1e1e2e; }
-        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background-color: #f4f4f9; margin: 0; display: flex; overflow-x: hidden; }
+        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background-color: #f4f4f9; margin: 0; display: flex; }
         
         /* 侧边栏 */
         #sidebar { width: 300px; background: var(--sidebar-bg); color: white; height: 100vh; position: fixed; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 100; }
         .sidebar-item { margin-bottom: 25px; }
-        label { display: block; margin-bottom: 8px; font-size: 14px; color: #bbb; }
-        
+        .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .label-text { font-size: 14px; color: #bbb; }
+        .current-val { color: var(--primary-color); font-weight: bold; font-family: monospace; }
+        .range-limits { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: -5px; }
+
         /* 主内容 */
         #main-content { margin-left: 300px; padding: 40px; width: calc(100% - 300px); min-height: 100vh; }
-        .stats-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; margin: 15px 0; }
+        .stats-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
         #total-count { font-size: 28px; font-weight: bold; color: var(--primary-color); display: block; }
 
-        /* UI 组件 */
+        /* 滑动条与控件 */
         select, input, .slider { width: 100%; padding: 10px; border-radius: 8px; border: none; margin-bottom: 10px; box-sizing: border-box; }
         .slider { cursor: pointer; accent-color: var(--primary-color); }
         .radio-group { display: flex; flex-direction: column; gap: 8px; }
         .radio-item { cursor: pointer; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.08); font-size: 13px; }
         .radio-item.active { background: var(--primary-color); color: white; }
 
-        /* 影像网格 - 解决图片变形的关键 */
+        /* 画廊网格 */
         .gallery { display: grid; gap: 25px; transition: all 0.3s ease; }
         .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-        
-        /* 动态图片高度：通过 object-fit 确保不变形 */
-        .card img { 
-            width: 100%; 
-            aspect-ratio: 16 / 10; /* 锁定黄金比例 */
-            object-fit: cover; /* 自动裁切填充而不拉伸变形 */
-            background: #eee; 
-            cursor: zoom-in;
-            transition: opacity 0.3s;
-        }
-        .card img:hover { opacity: 0.9; }
+        .card img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: #eee; cursor: zoom-in; }
 
-        /* 详情折叠区 */
+        /* 底部信息区 */
         .card-info { padding: 12px; border-top: 1px solid #f0f0f0; }
-        .expander-header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            cursor: pointer; color: #444; font-size: 13px; font-weight: bold; 
+        .info-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .date-tag { color: var(--primary-color); font-weight: bold; }
+        .title-link { 
+            color: #007bff; cursor: pointer; text-decoration: none; 
+            max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
+        .title-link:hover { text-decoration: underline; color: var(--primary-color); }
+        
         .expander-content { 
             max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; 
-            font-size: 12.5px; color: #666; line-height: 1.6; margin-top: 0;
+            font-size: 12.5px; color: #666; line-height: 1.6; 
         }
-        .expander-content.open { max-height: 200px; margin-top: 10px; padding-bottom: 5px; }
-        .card-date { color: var(--primary-color); margin-right: 5px; }
+        .expander-content.open { max-height: 300px; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px; }
 
-        /* 全屏灯箱样式 */
-        #lightbox {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 2000; justify-content: center; align-items: center;
-        }
-        #lightbox-img { max-width: 90%; max-height: 90%; object-fit: contain; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        .lb-btn { 
-            position: absolute; color: white; font-size: 40px; cursor: pointer; 
-            background: none; border: none; padding: 20px; transition: 0.3s;
-        }
-        .lb-btn:hover { color: var(--primary-color); }
-        #lb-close { top: 20px; right: 30px; }
-        #lb-prev { left: 30px; }
-        #lb-next { right: 30px; }
+        /* 灯箱 */
+        #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; justify-content: center; align-items: center; }
+        #lightbox-img { max-width: 90%; max-height: 90%; object-fit: contain; }
+        .lb-btn { position: absolute; color: white; font-size: 40px; cursor: pointer; background: none; border: none; padding: 20px; }
+        #lb-close { top: 20px; right: 30px; } #lb-prev { left: 30px; } #lb-next { right: 30px; }
 
         #load-more { display: block; margin: 50px auto; padding: 12px 45px; background: var(--primary-color); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; }
-        #load-more:disabled { background: #ccc; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
     <h2 id="ui-title">🏮 影像馆控制台</h2>
-    <div class="sidebar-item"><label id="ui-lang-label">🌐 语言</label><select id="lang-select"></select></div>
-    <div id="ui-flags" style="font-size: 18px; margin-bottom: 20px; letter-spacing: 5px;"></div>
-    <div class="stats-card"><span id="ui-stats-label">📊 总计</span><span id="total-count">...</span><small id="ui-unit">卷</small></div>
-    <hr>
-    <div class="sidebar-item"><label id="ui-cat-label">📂 栏目</label><div class="radio-group" id="category-group"></div></div>
-    <div class="sidebar-item"><label id="ui-search-label">搜索</label><input type="text" id="search-input"></div>
-    <div class="sidebar-item"><label id="ui-slider-label">⏳ 时间</label><input type="range" id="date-slider" class="slider"><div id="date-display" style="text-align: center; color: var(--primary-color); font-weight: bold;"></div></div>
-    <div class="sidebar-item"><label id="ui-grid-label">🖼️ 列数</label><input type="range" id="grid-slider" class="slider" min="1" max="6" value="3"></div>
+    <div class="sidebar-item"><label class="label-text" id="ui-lang-label">🌐 语言</label><select id="lang-select"></select></div>
+    
+    <div class="stats-card"><span class="label-text" id="ui-stats-label">📊 总计</span><span id="total-count">...</span><small id="ui-unit">卷</small></div>
+
+    <div class="sidebar-item">
+        <label class="label-text" id="ui-cat-label">📂 栏目</label>
+        <div class="radio-group" id="category-group"></div>
+    </div>
+
+    <div class="sidebar-item">
+        <div class="label-row"><span class="label-text" id="ui-search-label">搜索内容</span></div>
+        <input type="text" id="search-input">
+    </div>
+
+    <div class="sidebar-item">
+        <div class="label-row">
+            <span class="label-text" id="ui-slider-label">⏳ 时间截止</span>
+            <span id="date-display" class="current-val"></span>
+        </div>
+        <input type="range" id="date-slider" class="slider">
+        <div class="range-limits">
+            <span id="date-start">2014-02-12</span>
+            <span id="date-now">Today</span>
+        </div>
+    </div>
+
+    <div class="sidebar-item">
+        <div class="label-row">
+            <span class="label-text" id="ui-grid-label">🖼️ 每行列数</span>
+            <span id="grid-display" class="current-val">3</span>
+        </div>
+        <input type="range" id="grid-slider" class="slider" min="1" max="6" value="3">
+        <div class="range-limits">
+            <span>1 Col</span>
+            <span>6 Cols</span>
+        </div>
+    </div>
 </div>
 
 <div id="main-content">
     <h1 id="ui-main-title">⏳ 历史影像时间机器</h1>
     <div id="search-info" style="margin-bottom: 25px; color: #777; font-size: 14px;"></div>
     <div class="gallery" id="gallery"></div>
-    <button id="load-more">🔽 加载更多</button>
+    <button id="load-more">🔽 加载更多影像</button>
 </div>
 
 <div id="lightbox">
     <button class="lb-btn" id="lb-close"><i class="fas fa-times"></i></button>
     <button class="lb-btn" id="lb-prev"><i class="fas fa-chevron-left"></i></button>
-    <img id="lightbox-img" src="">
+    <img id="lightbox-img">
     <button class="lb-btn" id="lb-next"><i class="fas fa-chevron-right"></i></button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // 语言包保持不变 (此处为简写，实际请保留之前完整的10国字典)
     const LANG_DICT = {
-        "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换", "stats_label": "📊 全馆影像总计", "unit": "卷", "total_found": "🔍 在 {1} 之前检索到 {0} 卷影像", "search_label": "搜索档案内容", "search_ph": "输入关键词...", "load_more": "🔽 加载更多影像 ({0}/{1})", "no_more": "✅ 已显示全部内容", "slider": "⏳ 时间轴截止日期", "cat_label": "📂 栏目筛选", "all": "全部", "no_data": "📭 暂无影像", "grid_label": "🖼️ 每行显示图片数", "flags": "🇨🇳 🇭🇰 🇹🇭 🇮🇷 🇺🇸 🇯🇵 🇰🇷 🇩🇪 🇫🇷 🇻🇳", "cats": ["全部", "微博谈", "微视野", "微历史"], "detail": "📄 查看详情" },
-        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "stats_label": "📊 Total", "unit": "Items", "total_found": "🔍 Found {0} items before {1}", "search_label": "Search", "search_ph": "Keywords...", "load_more": "🔽 Load More ({0}/{1})", "no_more": "✅ All Loaded", "slider": "⏳ Timeline", "cat_label": "📂 Category", "all": "All", "no_data": "📭 No data", "grid_label": "🖼️ Columns", "flags": "🇺🇸 🇬🇧", "cats": ["All", "微博谈", "微视野", "微历史"], "detail": "📄 View Details" }
-        // ... 请在此处补充其他 8 国语言 ...
+        "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换", "stats_label": "📊 全馆影像总计", "unit": "卷", "total_found": "🔍 检索到 {0} 卷 (截至 {1})", "search_label": "搜索档案内容", "search_ph": "搜索...", "load_more": "🔽 加载更多 ({0}/{1})", "no_more": "✅ 已加载全部", "slider": "⏳ 截止日期", "cat_label": "📂 栏目筛选", "grid_label": "🖼️ 每行显示列数", "cats": ["全部", "微博谈", "微视野", "微历史"] },
+        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "stats_label": "📊 Global Archives", "unit": "Items", "total_found": "🔍 Found {0} (Before {1})", "search_label": "Search", "search_ph": "Search...", "load_more": "🔽 Load More ({0}/{1})", "no_more": "✅ Completed", "slider": "⏳ End Date", "cat_label": "📂 Categories", "grid_label": "🖼️ Column Count", "cats": ["All", "微博谈", "微视野", "微历史"] }
     };
 
     const SB_URL = "https://ztsdhjjnydrnsxgsheyb.supabase.co";
@@ -116,7 +129,6 @@
 
     let state = { lang: "🇨🇳 简体中文", category: "全部", search: "", dateLimit: new Date().toISOString().split('T')[0], grid: 3, page: 0, pageSize: 50, allImages: [] };
 
-    // --- 初始化 UI ---
     function initUI() {
         const langSelect = document.getElementById('lang-select');
         Object.keys(LANG_DICT).forEach(l => {
@@ -124,10 +136,15 @@
             opt.value = opt.innerText = l;
             langSelect.appendChild(opt);
         });
+
         const slider = document.getElementById('date-slider');
         slider.min = new Date("2014-02-12").getTime();
         slider.max = new Date().getTime();
         slider.value = slider.max;
+        
+        document.getElementById('date-now').innerText = state.dateLimit;
+        document.getElementById('date-display').innerText = state.dateLimit;
+
         updateLanguage();
         fetchGlobalTotal();
         refreshData(true);
@@ -135,17 +152,9 @@
 
     function updateLanguage() {
         const L = LANG_DICT[state.lang];
-        document.getElementById('ui-title').innerText = L.title;
-        document.getElementById('ui-main-title').innerText = L.main_title;
-        document.getElementById('ui-lang-label').innerText = L.lang_label;
-        document.getElementById('ui-stats-label').innerText = L.stats_label;
-        document.getElementById('ui-unit').innerText = L.unit;
-        document.getElementById('ui-cat-label').innerText = L.cat_label;
-        document.getElementById('ui-search-label').innerText = L.search_label;
-        document.getElementById('search-input').placeholder = L.search_ph;
-        document.getElementById('ui-slider-label').innerText = L.slider;
-        document.getElementById('ui-grid-label').innerText = L.grid_label;
-        document.getElementById('ui-flags').innerText = L.flags;
+        ["ui-title", "ui-main-title", "ui-lang-label", "ui-stats-label", "ui-unit", "ui-cat-label", "ui-search-label", "ui-slider-label", "ui-grid-label"].forEach(id => {
+            document.getElementById(id).innerText = L[id.replace('ui-', '').replace('-', '_')];
+        });
 
         const catGroup = document.getElementById('category-group');
         catGroup.innerHTML = "";
@@ -185,91 +194,60 @@
 
     function renderCards(data) {
         const container = document.getElementById('gallery');
-        const L = LANG_DICT[state.lang];
         data.forEach((item, index) => {
             const cardIdx = state.allImages.length - data.length + index;
             const card = document.createElement('div');
             card.className = 'card';
+            // 显示日期和标题链接，点击标题切换详情
             card.innerHTML = `
                 <img src="${item.image_url}" onclick="openLightbox(${cardIdx})" loading="lazy">
                 <div class="card-info">
-                    <div class="expander-header" onclick="toggleExpander(this)">
-                        <span><span class="card-date">📅 ${item.production_date}</span></span>
-                        <i class="fas fa-chevron-down"></i>
+                    <div class="info-header">
+                        <span class="date-tag">📅 ${item.production_date}</span>
+                        <a class="title-link" onclick="toggleExpander(this)">🔗 ${item.title || '详情'}</a>
                     </div>
-                    <div class="expander-content">
-                        ${item.description || '...'}
-                    </div>
+                    <div class="expander-content">${item.description || '无详细描述'}</div>
                 </div>
             `;
             container.appendChild(card);
         });
     }
 
-    // --- 逻辑控制 ---
-    function toggleExpander(header) {
-        const content = header.nextElementSibling;
-        const icon = header.querySelector('i');
+    function toggleExpander(link) {
+        const content = link.parentElement.nextElementSibling;
         content.classList.toggle('open');
-        icon.style.transform = content.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
     }
 
-    // --- 灯箱画廊逻辑 ---
-    let currentLbIdx = 0;
-    function openLightbox(idx) {
-        currentLbIdx = idx;
-        document.getElementById('lightbox').style.display = 'flex';
-        document.getElementById('lightbox-img').src = state.allImages[idx].image_url;
-        document.body.style.overflow = 'hidden'; // 禁止背景滚动
-    }
+    // 灯箱逻辑
+    let lbIdx = 0;
+    function openLightbox(i) { lbIdx = i; document.getElementById('lightbox').style.display='flex'; document.getElementById('lightbox-img').src=state.allImages[i].image_url; document.body.style.overflow='hidden'; }
+    function closeLightbox() { document.getElementById('lightbox').style.display='none'; document.body.style.overflow='auto'; }
+    function moveLb(step) { lbIdx = (lbIdx + step + state.allImages.length) % state.allImages.length; document.getElementById('lightbox-img').src=state.allImages[lbIdx].image_url; }
 
-    function closeLightbox() {
-        document.getElementById('lightbox').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
-    function changeLbImage(step) {
-        currentLbIdx += step;
-        if (currentLbIdx < 0) currentLbIdx = state.allImages.length - 1;
-        if (currentLbIdx >= state.allImages.length) currentLbIdx = 0;
-        document.getElementById('lightbox-img').src = state.allImages[currentLbIdx].image_url;
-    }
-
-    // --- 事件监听 ---
     document.getElementById('lb-close').onclick = closeLightbox;
-    document.getElementById('lb-prev').onclick = () => changeLbImage(-1);
-    document.getElementById('lb-next').onclick = () => changeLbImage(1);
+    document.getElementById('lb-prev').onclick = () => moveLb(-1);
+    document.getElementById('lb-next').onclick = () => moveLb(1);
     document.getElementById('lightbox').onclick = (e) => { if(e.target.id === 'lightbox') closeLightbox(); };
-    
-    // 键盘支持
-    window.onkeydown = (e) => {
-        if (document.getElementById('lightbox').style.display === 'flex') {
-            if (e.key === 'ArrowLeft') changeLbImage(-1);
-            if (e.key === 'ArrowRight') changeLbImage(1);
-            if (e.key === 'Escape') closeLightbox();
-        }
-    };
 
-    document.getElementById('lang-select').onchange = (e) => { state.lang = e.target.value; updateLanguage(); refreshData(true); };
-    document.getElementById('search-input').oninput = (e) => {
-        clearTimeout(window.stimer);
-        window.stimer = setTimeout(() => { state.search = e.target.value; refreshData(true); }, 500);
-    };
+    // 滑动条实时回显
     document.getElementById('date-slider').oninput = (e) => {
         state.dateLimit = new Date(parseInt(e.target.value)).toISOString().split('T')[0];
         document.getElementById('date-display').innerText = state.dateLimit;
-        clearTimeout(window.dtimer);
-        window.dtimer = setTimeout(() => refreshData(true), 300);
+        clearTimeout(window.dt); window.dt = setTimeout(() => refreshData(true), 300);
     };
     document.getElementById('grid-slider').oninput = (e) => {
         state.grid = e.target.value;
+        document.getElementById('grid-display').innerText = state.grid;
         document.getElementById('gallery').style.gridTemplateColumns = `repeat(${state.grid}, 1fr)`;
+    };
+    document.getElementById('search-input').oninput = (e) => {
+        state.search = e.target.value;
+        clearTimeout(window.st); window.st = setTimeout(() => refreshData(true), 500);
     };
     document.getElementById('load-more').onclick = () => { state.page++; refreshData(); };
 
     initUI();
     document.getElementById('gallery').style.gridTemplateColumns = `repeat(${state.grid}, 1fr)`;
-    document.getElementById('date-display').innerText = state.dateLimit;
 </script>
 </body>
 </html>
