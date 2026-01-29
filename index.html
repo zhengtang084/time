@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博谈影像档案库 V68</title>
+    <title>博谈影像档案库 V68-Select-Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -38,11 +38,32 @@
         .stats-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         #total-count { font-size: 24px; font-weight: bold; color: var(--primary-color); display: block; margin-top: 5px; }
 
-        /* 搜索容器样式 */
         .search-wrapper { display: flex; gap: 5px; }
-        select, .search-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: var(--input-bg); color: white; box-sizing: border-box; outline: none; }
         
-        /* 确定搜索按钮样式 */
+        /* 🏮 关键修改：优化下拉框在深色模式下的表现 */
+        select { 
+            width: 100%; 
+            padding: 10px; 
+            border-radius: 8px; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            background-color: #333 !important; /* 强制深色背景 */
+            color: #fff !important;            /* 强制白色文字 */
+            box-sizing: border-box; 
+            outline: none; 
+            appearance: none;                  /* 移除部分浏览器原生样式 */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' width='18px' height='18px'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+        
+        /* 强制选项列表样式 */
+        select option {
+            background-color: #1e1e2e;
+            color: #fff;
+        }
+
+        .search-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: var(--input-bg); color: white; box-sizing: border-box; outline: none; }
+        
         .btn-search { 
             background: var(--primary-color); 
             color: white; 
@@ -266,7 +287,6 @@
         document.body.style.overflow = 'hidden';
     }
 
-    // 搜索逻辑
     function triggerSearch() {
         state.search = document.getElementById('search-input').value;
         refreshData(true);
