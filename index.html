@@ -29,7 +29,7 @@
             padding: 20px;
             width: calc(100% - 260px);
         }
-        /* 图片网格布局 */
+        /* 影像网格布局 */
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -64,6 +64,7 @@
             border-radius: 6px;
             border: none;
             outline: none;
+            font-size: 14px;
         }
         #load-more {
             display: block;
@@ -75,10 +76,6 @@
             border-radius: 25px;
             cursor: pointer;
             font-size: 16px;
-            transition: background 0.3s;
-        }
-        #load-more:hover {
-            background: #e04343;
         }
         #load-more:disabled {
             background: #ccc;
@@ -92,21 +89,21 @@
     <h2><i class="fas fa-landmark"></i> 影像馆</h2>
     <hr style="opacity: 0.2;">
     <p><i class="fas fa-chart-line"></i> 影像总计：<span id="total-count">加载中...</span></p>
-    <input type="text" id="search-input" class="search-box" placeholder="搜索地点或日期...">
-    <p style="font-size: 12px; color: #888; margin-top: 20px;">支持模糊搜索地点/年份</p>
+    <input type="text" id="search-input" class="search-box" placeholder="输入关键词搜索描述...">
+    <p style="font-size: 12px; color: #888; margin-top: 20px;">支持模糊匹配描述内容</p>
 </div>
 
 <div id="main-content">
-    <h1>博谈影像档案库 ChinaTime</h1>
+    <h1>⏳ 历史影像时间机器</h1>
     <div class="gallery" id="gallery">
         </div>
-    <button id="load-more">加载更多影像</button>
+    <button id="load-more">🔽 加载更多影像</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // 1. 配置信息 (已将变量名修改为 mySupabase 以修复报错)
+    // 1. 配置信息 (已根据 app_gallery_v52.py 修正)
     const SB_URL = "https://ztsdhjjnydrnsxgsheyb.supabase.co";
     const SB_KEY = "sb_publishable_39tYq9zt52DxihifjY_ENw_elQW0FoK"; 
     const mySupabase = supabase.createClient(SB_URL, SB_KEY);
@@ -115,36 +112,32 @@
     const pageSize = 40;
     let currentSearch = "";
 
-    // 2. 核心数据抓取函数
+    // 2. 核心抓取函数
     async function fetchImages(isNewSearch = false) {
         if (isNewSearch) {
             currentPage = 0;
             document.getElementById('gallery').innerHTML = "";
-            document.getElementById('load-more').innerText = "加载中...";
+            document.getElementById('load-more').innerText = "正在检索...";
         }
 
         try {
-            // 调试信息：尝试连接
-            console.log("正在尝试读取 botan_final 表...");
-            
+            // 【关键修正点】：
+            // 数据库表名：botan_final
+            // 排序字段：production_date
             let query = mySupabase
                 .from('botan_final')
                 .select('*', { count: 'exact' })
-                .order('date', { ascending: false })
+                .order('production_date', { ascending: false })
                 .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
 
             if (currentSearch) {
-                query = query.or(`location.ilike.%${currentSearch}%,date.ilike.%${currentSearch}%`);
+                // 【关键修正点】：Python 代码里搜索的是 'description' 字段
+                query = query.ilike('description', `%${currentSearch}%`);
             }
 
             const { data, count, error } = await query;
 
-            // 如果报错，直接把错误对象弹出来看
-            if (error) {
-                console.error("详细错误:", error);
-                alert("数据库报错: " + error.message + "\n代码: " + error.code);
-                return;
-            }
+            if (error) throw error;
 
             if (count !== null) {
                 document.getElementById('total-count').innerText = count + " 卷";
@@ -152,29 +145,37 @@
 
             if (data && data.length > 0) {
                 renderGallery(data);
-                document.getElementById('load-more').innerText = "加载更多影像";
+                document.getElementById('load-more').innerText = "🔽 加载更多影像";
                 document.getElementById('load-more').disabled = false;
             } else {
-                if (isNewSearch) document.getElementById('gallery').innerHTML = "<p>未找到相关记录</p>";
-                document.getElementById('load-more').innerText = "没有更多了";
+                if (isNewSearch) document.getElementById('gallery').innerHTML = "<p style='color:#999;'>未找到相关影像</p>";
+                document.getElementById('load-more').innerText = "✅ 已显示全部内容";
                 document.getElementById('load-more').disabled = true;
             }
         } catch (err) {
-            console.error("网络异常:", err);
-            alert("无法连接到网络，请检查代理或网络环境。");
+            console.error("数据库连接错误:", err.message);
+            alert("加载失败: " + err.message);
         }
     }
-    // 3. 渲染到页面
+
+    // 3. 渲染到页面 (已根据 Python 字段修正)
     function renderGallery(images) {
         const container = document.getElementById('gallery');
         images.forEach(img => {
             const card = document.createElement('div');
             card.className = 'card';
+            
+            // 【字段对应关系】：
+            // 图片链接：image_url
+            // 日期显示：production_date
+            // 描述信息：description
             card.innerHTML = `
-                <img src="${img.url}" alt="档案图片" loading="lazy">
+                <img src="${img.image_url}" alt="档案图片" loading="lazy" onerror="this.src='https://placehold.co/400x300?text=图片暂不可用'">
                 <div class="card-info">
-                    <strong><i class="fas fa-calendar-alt"></i> ${img.date || '未知年份'}</strong><br>
-                    <i class="fas fa-map-marker-alt"></i> ${img.location || '未知地点'}
+                    <strong><i class="fas fa-calendar-alt"></i> ${img.production_date || '未知'}</strong><br>
+                    <p style="margin: 5px 0 0 0; color: #666; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${img.description || '暂无描述'}
+                    </p>
                 </div>
             `;
             container.appendChild(card);
@@ -187,14 +188,13 @@
         fetchImages();
     };
 
-    // 搜索框防抖处理
     let timer;
     document.getElementById('search-input').oninput = (e) => {
         clearTimeout(timer);
         timer = setTimeout(() => {
-            currentSearch = e.target.value;
+            currentSearch = e.target.value.trim();
             fetchImages(true);
-        }, 500); // 用户停止输入 0.5 秒后才触发搜索
+        }, 500);
     };
 
     // 初始加载
