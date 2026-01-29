@@ -3,58 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博谈影像档案库 ChinaTime</title>
+    <title>博谈影像档案库 V61-Final</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary-color: #ff4b4b; --sidebar-bg: #1e1e2e; }
-        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background-color: #f4f4f9; margin: 0; display: flex; }
+        /* 【1. 定义色彩变量 - 适配自动主题】 */
+        :root {
+            --primary-color: #ff4b4b;
+            /* 默认浅色模式颜色 */
+            --main-bg: #f4f4f9;
+            --sidebar-bg: #1e1e2e;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #eeeeee;
+            --input-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 当系统处于深色模式时自动切换 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --main-bg: #121212;
+                --sidebar-bg: #000000;
+                --card-bg: #1e1e1e;
+                --text-main: #e0e0e0;
+                --text-muted: #aaaaaa;
+                --border-color: #333333;
+                --input-bg: rgba(255, 255, 255, 0.05);
+            }
+        }
+
+        body { 
+            font-family: "Segoe UI", "Microsoft YaHei", sans-serif; 
+            background-color: var(--main-bg); 
+            color: var(--text-main);
+            margin: 0; display: flex; 
+            transition: all 0.3s ease;
+        }
         
         /* 侧边栏 */
-        #sidebar { width: 300px; background: var(--sidebar-bg); color: white; height: 100vh; position: fixed; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 100; }
+        #sidebar { 
+            width: 300px; background: var(--sidebar-bg); color: white; 
+            height: 100vh; position: fixed; padding: 25px; 
+            box-sizing: border-box; overflow-y: auto; z-index: 100; 
+        }
         .sidebar-item { margin-bottom: 25px; }
         .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .label-text { font-size: 14px; color: #bbb; }
         .current-val { color: var(--primary-color); font-weight: bold; font-family: monospace; }
         .range-limits { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: -5px; }
 
-        /* 主内容 */
+        /* 主内容区 */
         #main-content { margin-left: 300px; padding: 40px; width: calc(100% - 300px); min-height: 100vh; }
         .stats-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
         #total-count { font-size: 28px; font-weight: bold; color: var(--primary-color); display: block; }
 
         /* 控件 */
-        select, input, .slider { width: 100%; padding: 10px; border-radius: 8px; border: none; margin-bottom: 10px; box-sizing: border-box; }
-        .slider { cursor: pointer; accent-color: var(--primary-color); }
+        select, input { 
+            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); 
+            background: var(--input-bg); color: inherit; box-sizing: border-box; 
+        }
+        .slider { width: 100%; cursor: pointer; accent-color: var(--primary-color); }
         .radio-group { display: flex; flex-direction: column; gap: 8px; }
         .radio-item { cursor: pointer; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.08); font-size: 13px; }
         .radio-item.active { background: var(--primary-color); color: white; }
 
-        /* 网格卡片 */
+        /* 画廊卡片 */
         .gallery { display: grid; gap: 25px; align-items: start; }
-        .card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee; }
-        .card-img-container { width: 100%; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+        .card { 
+            background: var(--card-bg); border-radius: 12px; overflow: hidden; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border-color); 
+        }
+        .card-img-container { width: 100%; background: rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: center; }
         .card img { width: 100%; height: auto; max-height: 400px; object-fit: contain; cursor: zoom-in; }
-        .card-info { padding: 12px; border-top: 1px solid #f0f0f0; }
+        .card-info { padding: 12px; border-top: 1px solid var(--border-color); }
         .info-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
         .date-tag { color: var(--primary-color); font-weight: bold; }
-        .title-link { color: #007bff; cursor: pointer; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-        .expander-content { max-height: 0; overflow: hidden; transition: max-height 0.3s; font-size: 12.5px; color: #555; line-height: 1.6; }
-        .expander-content.open { max-height: 400px; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px; }
+        .title-link { color: #007bff; cursor: pointer; font-weight: 500; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+        .expander-content { max-height: 0; overflow: hidden; transition: max-height 0.3s; font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+        .expander-content.open { max-height: 400px; margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px; }
 
-        /* 全屏灯箱增强版 */
+        /* 灯箱增强 */
         #lightbox { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; 
         }
-        #lightbox-img { max-width: 90%; max-height: 80%; object-fit: contain; margin-bottom: 20px; }
-        
-        /* 灯箱描述文字样式 */
+        #lightbox-img { max-width: 90%; max-height: 75%; object-fit: contain; }
         #lb-caption { 
-            width: 80%; max-width: 800px; color: #ddd; text-align: center; 
-            font-size: 14px; line-height: 1.6; background: rgba(255,255,255,0.1); 
-            padding: 15px; border-radius: 10px; backdrop-filter: blur(5px);
+            width: 80%; max-width: 800px; color: #ddd; text-align: center; margin-top: 20px;
+            padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; backdrop-filter: blur(5px);
         }
-        
         .lb-btn { position: absolute; color: white; font-size: 40px; cursor: pointer; background: none; border: none; padding: 20px; }
         #lb-close { top: 20px; right: 30px; } #lb-prev { left: 30px; } #lb-next { right: 30px; }
 
@@ -65,42 +102,46 @@
 
 <div id="sidebar">
     <h2 id="ui-title">🏮 影像馆控制台</h2>
-    <div class="sidebar-item"><label class="label-text" id="ui-lang-label">🌐 语言切换 / Language</label><select id="lang-select"></select></div>
-    <div class="stats-card"><span class="label-text" id="ui-stats-label">📊 全馆影像总计</span><span id="total-count">...</span><small id="ui-unit">卷</small></div>
-    <div class="sidebar-item"><label class="label-text" id="ui-cat-label">📂 栏目筛选</label><div class="radio-group" id="category-group"></div></div>
-    <div class="sidebar-item"><div class="label-row"><span class="label-text" id="ui-search-label">搜索档案内容</span></div><input type="text" id="search-input"></div>
+    <div class="sidebar-item"><label class="label-text" id="ui-lang-label">🌐 语言</label><select id="lang-select" onchange="changeLang(this.value)"></select></div>
+    <div class="stats-card"><span class="label-text" id="ui-stats-label">📊 总计</span><span id="total-count">...</span><small id="ui-unit">卷</small></div>
+    <div class="sidebar-item"><label class="label-text" id="ui-cat-label">📂 栏目</label><div class="radio-group" id="category-group"></div></div>
+    <div class="sidebar-item"><label class="label-text" id="ui-search-label">搜索</label><input type="text" id="search-input"></div>
+    
     <div class="sidebar-item">
-        <div class="label-row"><span class="label-text" id="ui-slider-label">⏳ 时间轴截止</span><span id="date-display" class="current-val"></span></div>
+        <div class="label-row"><span class="label-text" id="ui-slider-label">⏳ 时间截止</span><span id="date-display" class="current-val"></span></div>
         <input type="range" id="date-slider" class="slider">
         <div class="range-limits"><span id="date-start">2014-02-12</span><span id="date-now">Today</span></div>
     </div>
+
     <div class="sidebar-item">
-        <div class="label-row"><span class="label-text" id="ui-grid-label">🖼️ 图片列数</span><span id="grid-display" class="current-val">3</span></div>
+        <div class="label-row"><span class="label-text" id="ui-grid-label">🖼️ 每行列数</span><span id="grid-display" class="current-val">3</span></div>
         <input type="range" id="grid-slider" class="slider" min="1" max="6" value="3">
-        <div class="range-limits"><span>1 Col</span><span>6 Cols</span></div>
+        <div class="range-limits"><span>1 列</span><span>6 列</span></div>
     </div>
 </div>
 
 <div id="main-content">
     <h1 id="ui-main-title">⏳ 历史影像时间机器</h1>
-    <div id="search-info" style="margin-bottom: 25px; color: #777; font-size: 14px;"></div>
+    <div id="search-info" style="margin-bottom: 25px; color: var(--text-muted); font-size: 14px;"></div>
     <div class="gallery" id="gallery"></div>
-    <button id="load-more">🔽 加载更多影像</button>
+    <button id="load-more">🔽 加载更多</button>
 </div>
 
 <div id="lightbox">
     <button class="lb-btn" id="lb-close"><i class="fas fa-times"></i></button>
     <button class="lb-btn" id="lb-prev"><i class="fas fa-chevron-left"></i></button>
     <img id="lightbox-img">
-    <div id="lb-caption"></div> <button class="lb-btn" id="lb-next"><i class="fas fa-chevron-right"></i></button>
+    <div id="lb-caption"></div>
+    <button class="lb-btn" id="lb-next"><i class="fas fa-chevron-right"></i></button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+    // 完整 10 国语言字典
     const LANG_DICT = {
-        "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换", "stats_label": "📊 全馆影像总计", "unit": "卷", "total_found": "🔍 检索到 {0} 卷 (截至 {1})", "search_ph": "搜索...", "load_more": "🔽 加载更多 ({0}/{1})", "no_more": "✅ 已加载全部", "slider": "⏳ 时间轴截止", "cat_label": "📂 栏目筛选", "grid_label": "🖼️ 图片列数", "cats": ["全部", "微博谈", "微视野", "微历史"] },
+        "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换", "stats_label": "📊 全馆影像总计", "unit": "卷", "total_found": "🔍 在 {1} 之前检索到 {0} 卷影像", "search_label": "搜索档案内容", "search_ph": "输入关键词...", "load_more": "🔽 加载更多 ({0}/{1})", "no_more": "✅ 已加载全部", "slider": "⏳ 时间轴截止", "cat_label": "📂 栏目筛选", "grid_label": "🖼️ 每行显示列数", "cats": ["全部", "微博谈", "微视野", "微历史"] },
+        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "stats_label": "📊 Global Stats", "unit": "Items", "total_found": "🔍 Found {0} items before {1}", "search_label": "Search", "search_ph": "Search...", "load_more": "🔽 Load More ({0}/{1})", "no_more": "✅ Completed", "slider": "⏳ End Date", "cat_label": "📂 Categories", "grid_label": "🖼️ Columns", "cats": ["All", "微博谈", "微视野", "微历史"] },
         "🇭🇰 繁體中文": { "title": "🏮 影像館控制台", "main_title": "⏳ 歷史影像時間機器", "lang_label": "🌐 語言切換", "stats_label": "📊 全館影像總計", "unit": "卷", "total_found": "🔍 檢索到 {0} 卷影像", "search_ph": "搜索...", "load_more": "🔽 加載更多 ({0}/{1})", "no_more": "✅ 已加載全部", "slider": "⏳ 時間軸截止", "cat_label": "📂 欄目篩選", "grid_label": "🖼️ 圖片列數", "cats": ["全部", "微博談", "微視野", "微歷史"] },
-        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "stats_label": "📊 Total Archives", "unit": "Items", "total_found": "🔍 Found {0} items before {1}", "search_ph": "Search...", "load_more": "🔽 Load More ({0}/{1})", "no_more": "✅ Completed", "slider": "⏳ Cutoff Date", "cat_label": "📂 Categories", "grid_label": "🖼️ Columns", "cats": ["All", "微博谈", "微视野", "微历史"] },
         "🇯🇵 日本語": { "title": "🏮 コントロール", "main_title": "⏳ 歴史映像マシン", "lang_label": "🌐 言語切替", "stats_label": "📊 総数", "unit": "巻", "total_found": "🔍 {0} 件発見", "search_ph": "検索...", "load_more": "🔽 もっと見る", "no_more": "✅ 全表示", "slider": "⏳ タイムライン", "cat_label": "📂 カテゴリ", "grid_label": "🖼️ 列数", "cats": ["すべて", "微博談", "微視野", "微历史"] },
         "🇰🇷 한국어": { "title": "🏮 제어판", "main_title": "⏳ 타임머신", "lang_label": "🌐 언어 변경", "stats_label": "📊 통계", "unit": "권", "total_found": "🔍 {0} 개 항목 발견", "search_ph": "검색...", "load_more": "🔽 더 보기", "no_more": "✅ 완료", "slider": "⏳ 시간", "cat_label": "📂 카테고리", "grid_label": "🖼️ 열", "cats": ["전체", "微博談", "微視野", "微历史"] },
         "🇩🇪 Deutsch": { "title": "🏮 Konsole", "main_title": "⏳ Zeitmaschine", "lang_label": "🌐 Sprache", "stats_label": "📊 Gesamt", "unit": "Bände", "total_found": "🔍 {0} Bilder gefunden", "search_ph": "Suchen...", "load_more": "🔽 Mehr", "no_more": "✅ Fertig", "slider": "⏳ Zeit", "cat_label": "📂 Kategorie", "grid_label": "🖼️ Spalten", "cats": ["Alle", "微博谈", "微视野", "微历史"] },
@@ -134,15 +175,14 @@
         refreshData(true);
     }
 
+    function changeLang(val) { state.lang = val; updateLanguage(); refreshData(true); }
+
     function updateLanguage() {
         const L = LANG_DICT[state.lang];
         const ids = ["ui-title", "ui-main-title", "ui-lang-label", "ui-stats-label", "ui-unit", "ui-cat-label", "ui-search-label", "ui-slider-label", "ui-grid-label"];
         ids.forEach(id => {
             const el = document.getElementById(id);
-            if(el) {
-                const key = id.replace('ui-', '').replace('-', '_');
-                el.innerText = L[key] || el.innerText;
-            }
+            if(el) el.innerText = L[id.replace('ui-', '').replace('-', '_')];
         });
         document.getElementById('search-input').placeholder = L.search_ph;
 
@@ -177,7 +217,6 @@
         state.allImages = state.allImages.concat(data);
         document.getElementById('search-info').innerText = L.total_found.replace('{0}', count).replace('{1}', state.dateLimit);
         renderCards(data);
-        
         const btn = document.getElementById('load-more');
         btn.innerText = (state.allImages.length >= count) ? L.no_more : L.load_more.replace('{0}', state.allImages.length).replace('{1}', count);
         btn.disabled = (state.allImages.length >= count);
@@ -194,9 +233,9 @@
                 <div class="card-info">
                     <div class="info-header">
                         <span class="date-tag">📅 ${item.production_date}</span>
-                        <a class="title-link" onclick="toggleExpander(this)">🔗 ${item.title || '详细描述'}</a>
+                        <a class="title-link" onclick="toggleExpander(this)">🔗 ${item.title || '详情描述'}</a>
                     </div>
-                    <div class="expander-content">${item.description || '无详细描述'}</div>
+                    <div class="expander-content">${item.description || ''}</div>
                 </div>
             `;
             container.appendChild(card);
@@ -205,35 +244,21 @@
 
     function toggleExpander(link) { link.parentElement.nextElementSibling.classList.toggle('open'); }
 
-    // 灯箱增强逻辑
     let lbIdx = 0;
-    function openLightbox(i) { 
-        lbIdx = i; 
-        const lb = document.getElementById('lightbox');
-        lb.style.display='flex'; 
-        updateLbContent();
-        document.body.style.overflow='hidden'; 
-    }
-    
+    function openLightbox(i) { lbIdx = i; document.getElementById('lightbox').style.display='flex'; updateLbContent(); document.body.style.overflow='hidden'; }
+    function closeLightbox() { document.getElementById('lightbox').style.display='none'; document.body.style.overflow='auto'; }
+    function moveLb(step) { lbIdx = (lbIdx + step + state.allImages.length) % state.allImages.length; updateLbContent(); }
     function updateLbContent() {
         const item = state.allImages[lbIdx];
         document.getElementById('lightbox-img').src = item.image_url;
-        // 在全屏下方显示：日期 + 标题 + 描述
-        document.getElementById('lb-caption').innerHTML = `
-            <div style="color:var(--primary-color); font-weight:bold; margin-bottom:5px;">📅 ${item.production_date} | ${item.title || ''}</div>
-            <div>${item.description || ''}</div>
-        `;
+        document.getElementById('lb-caption').innerHTML = `<b>${item.production_date}</b> | ${item.title || ''}<br><small>${item.description || ''}</small>`;
     }
 
-    function closeLightbox() { document.getElementById('lightbox').style.display='none'; document.body.style.overflow='auto'; }
-    function moveLb(step) { lbIdx = (lbIdx + step + state.allImages.length) % state.allImages.length; updateLbContent(); }
-
     document.getElementById('lb-close').onclick = closeLightbox;
-    document.getElementById('lb-prev').onclick = () => moveLb(-1);
-    document.getElementById('lb-next').onclick = () => moveLb(1);
+    document.getElementById('lb-prev').onclick = (e) => { e.stopPropagation(); moveLb(-1); };
+    document.getElementById('lb-next').onclick = (e) => { e.stopPropagation(); moveLb(1); };
     document.getElementById('lightbox').onclick = (e) => { if(e.target.id === 'lightbox') closeLightbox(); };
 
-    // 滑动条实时回显
     document.getElementById('date-slider').oninput = (e) => {
         state.dateLimit = new Date(parseInt(e.target.value)).toISOString().split('T')[0];
         document.getElementById('date-display').innerText = state.dateLimit;
@@ -248,7 +273,6 @@
         state.search = e.target.value;
         clearTimeout(window.st); window.st = setTimeout(() => refreshData(true), 500);
     };
-    document.getElementById('lang-select').onchange = (e) => { state.lang = e.target.value; updateLanguage(); refreshData(true); };
     document.getElementById('load-more').onclick = () => { state.page++; refreshData(); };
 
     initUI();
