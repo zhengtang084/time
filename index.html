@@ -12,7 +12,7 @@
             margin: 0;
             display: flex;
         }
-        /* 侧边栏样式 */
+        /* 侧边栏 */
         #sidebar {
             width: 260px;
             background-color: #1e1e2e;
@@ -21,51 +21,68 @@
             position: fixed;
             padding: 20px;
             box-sizing: border-box;
+            z-index: 100;
         }
         /* 主内容区 */
         #main-content {
             margin-left: 260px;
             padding: 20px;
-            width: 100%;
+            width: calc(100% - 260px);
         }
-        /* 图片网格 */
+        /* 图片网格布局 */
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
         }
         .card {
             background: white;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
         }
         .card img {
             width: 100%;
-            height: 200px;
+            height: 220px;
             object-fit: cover;
+            background-color: #eee;
         }
         .card-info {
-            padding: 10px;
+            padding: 12px;
             font-size: 14px;
-            color: #666;
+            color: #444;
+            line-height: 1.6;
         }
         .search-box {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 6px;
+            border: none;
+            outline: none;
         }
         #load-more {
             display: block;
-            margin: 30px auto;
-            padding: 10px 20px;
+            margin: 40px auto;
+            padding: 12px 30px;
             background: #ff4b4b;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 25px;
             cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        #load-more:hover {
+            background: #e04343;
+        }
+        #load-more:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -73,78 +90,105 @@
 
 <div id="sidebar">
     <h2><i class="fas fa-landmark"></i> 影像馆</h2>
-    <hr>
+    <hr style="opacity: 0.2;">
     <p><i class="fas fa-chart-line"></i> 影像总计：<span id="total-count">加载中...</span></p>
     <input type="text" id="search-input" class="search-box" placeholder="搜索地点或日期...">
+    <p style="font-size: 12px; color: #888; margin-top: 20px;">支持模糊搜索地点/年份</p>
 </div>
 
 <div id="main-content">
     <h1>博谈影像档案库 ChinaTime</h1>
     <div class="gallery" id="gallery">
         </div>
-    <button id="load-more">查看更多影像</button>
+    <button id="load-more">加载更多影像</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-    // 1. 配置你的 Supabase 信息
-    const SUPABASE_URL = "https://ztsdhjjnydrnsxgsheyb.supabase.co"; 
-    const SUPABASE_KEY = "sb_publishable_39tYq9zt52DxihifjY_ENw_elQW0FoK"; // 替换为你的 Key
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 1. 配置信息 (已将变量名修改为 mySupabase 以修复报错)
+    const SB_URL = "https://ztsdhjjnydrnsxgsheyb.supabase.co";
+    const SB_KEY = "sb_publishable_39tYq9zt52DxihifjY_ENw_elQW0FoK"; 
+    const mySupabase = supabase.createClient(SB_URL, SB_KEY);
 
     let currentPage = 0;
-    const pageSize = 50;
+    const pageSize = 40;
+    let currentSearch = "";
 
-    // 2. 抓取数据的函数
-    async function fetchImages(searchTerm = "") {
-        let query = supabase
-            .from('china_time')
-            .select('*', { count: 'exact' })
-            .order('date', { ascending: false })
-            .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
-
-        if (searchTerm) {
-            query = query.or(`location.ilike.%${searchTerm}%,date.ilike.%${searchTerm}%`);
+    // 2. 核心数据抓取函数
+    async function fetchImages(isNewSearch = false) {
+        if (isNewSearch) {
+            currentPage = 0;
+            document.getElementById('gallery').innerHTML = "";
+            document.getElementById('load-more').innerText = "加载中...";
         }
 
-        const { data, count, error } = await query;
+        try {
+            // 根据你的截图，表名改为 botan_final
+            let query = mySupabase
+                .from('botan_final')
+                .select('*', { count: 'exact' })
+                .order('date', { ascending: false })
+                .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
 
-        if (error) {
-            console.error(error);
-            return;
+            if (currentSearch) {
+                query = query.or(`location.ilike.%${currentSearch}%,date.ilike.%${currentSearch}%`);
+            }
+
+            const { data, count, error } = await query;
+
+            if (error) throw error;
+
+            if (count !== null) {
+                document.getElementById('total-count').innerText = count + " 卷";
+            }
+
+            if (data && data.length > 0) {
+                renderGallery(data);
+                document.getElementById('load-more').innerText = "加载更多影像";
+                document.getElementById('load-more').disabled = false;
+            } else {
+                if (isNewSearch) document.getElementById('gallery').innerHTML = "<p>未找到相关记录</p>";
+                document.getElementById('load-more').innerText = "没有更多了";
+                document.getElementById('load-more').disabled = true;
+            }
+        } catch (err) {
+            console.error("加载失败:", err.message);
+            alert("数据库连接失败，请检查 RLS 策略设置。");
         }
-
-        document.getElementById('total-count').innerText = count + " 卷";
-        renderGallery(data);
     }
 
-    // 3. 渲染画廊
+    // 3. 渲染到页面
     function renderGallery(images) {
         const container = document.getElementById('gallery');
         images.forEach(img => {
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
-                <img src="${img.url}" loading="lazy">
+                <img src="${img.url}" alt="档案图片" loading="lazy">
                 <div class="card-info">
-                    <i class="fas fa-calendar"></i> ${img.date || '未知'} <br>
-                    <i class="fas fa-map-marker-alt"></i> ${img.location || '未知'}
+                    <strong><i class="fas fa-calendar-alt"></i> ${img.date || '未知年份'}</strong><br>
+                    <i class="fas fa-map-marker-alt"></i> ${img.location || '未知地点'}
                 </div>
             `;
             container.appendChild(card);
         });
     }
 
-    // 4. 事件监听
+    // 4. 事件绑定
     document.getElementById('load-more').onclick = () => {
         currentPage++;
-        fetchImages(document.getElementById('search-input').value);
+        fetchImages();
     };
 
+    // 搜索框防抖处理
+    let timer;
     document.getElementById('search-input').oninput = (e) => {
-        document.getElementById('gallery').innerHTML = ""; // 清空
-        currentPage = 0;
-        fetchImages(e.target.value);
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            currentSearch = e.target.value;
+            fetchImages(true);
+        }, 500); // 用户停止输入 0.5 秒后才触发搜索
     };
 
     // 初始加载
