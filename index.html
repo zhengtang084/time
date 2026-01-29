@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博谈影像档案库 V64-Global</title>
+    <title>博谈影像档案库 V65-Final</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -36,11 +36,15 @@
         .current-val { color: var(--primary-color); font-weight: bold; font-family: monospace; }
         .range-limits { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: -5px; }
 
+        /* 统计卡片样式 */
+        .stats-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
+        #total-count { font-size: 24px; font-weight: bold; color: var(--primary-color); display: block; margin-top: 5px; }
+
         select, input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: var(--input-bg); color: white; box-sizing: border-box; outline: none; }
         select option { background-color: #1e1e2e; color: white; }
 
         .search-container { display: flex; gap: 8px; }
-        .btn-search { background: var(--primary-color); color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .btn-search { background: var(--primary-color); color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
 
         .radio-group { display: flex; flex-direction: column; gap: 8px; }
         .radio-item { cursor: pointer; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.08); font-size: 13px; color: #ccc; }
@@ -51,7 +55,6 @@
         .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
         .card img { width: 100%; height: auto; max-height: 400px; object-fit: contain; cursor: zoom-in; }
         
-        /* 灯箱 */
         #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; }
         #lightbox-img { max-width: 90%; max-height: 75%; object-fit: contain; }
         #lb-caption { width: 80%; max-width: 800px; color: #ddd; text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; backdrop-filter: blur(5px); }
@@ -68,6 +71,12 @@
     <div class="sidebar-item">
         <label class="label-text" id="ui-lang-label">🌐 语言切换</label>
         <select id="lang-select" onchange="changeLang(this.value)"></select>
+    </div>
+
+    <div class="stats-box">
+        <span class="label-text" id="ui-stats-label">📊 全馆影像总计</span>
+        <span id="total-count">...</span>
+        <small id="ui-unit">卷</small>
     </div>
 
     <div class="sidebar-item">
@@ -98,7 +107,8 @@
 
 <div id="main-content">
     <h1 id="ui-main-title">⏳ 历史影像时间机器</h1>
-    <div id="search-info" style="margin-bottom: 25px; color: var(--text-muted); font-size: 14px;"></div>
+    <div id="search-info" style="margin-bottom: 25px; color: var(--text-muted); font-size: 14px; font-weight: 500;"></div>
+    
     <div class="gallery" id="gallery"></div>
     <button id="load-more">🔽 加载更多影像</button>
 </div>
@@ -148,24 +158,28 @@
         slider.value = slider.max;
         
         document.getElementById('date-now').innerText = todayStr;
+        document.getElementById('date-display').innerText = todayStr;
+
         updateLanguage();
+        fetchGlobalTotal(); // 获取左侧总计
         refreshData(true);
     }
 
     function changeLang(val) { state.lang = val; updateLanguage(); refreshData(true); }
 
     function updateLanguage() {
-        const L = LANG_DICT[state.lang];
+        const L = LANG_DICT[state.lang] || LANG_DICT["🇨🇳 简体中文"];
         document.getElementById('ui-title').innerText = L.title;
         document.getElementById('ui-main-title').innerText = L.main_title;
         document.getElementById('ui-lang-label').innerText = L.lang_label;
+        document.getElementById('ui-stats-label').innerText = L.stats_label;
+        document.getElementById('ui-unit').innerText = L.unit;
         document.getElementById('ui-cat-label').innerText = L.cat_label;
         document.getElementById('ui-search-label').innerText = L.search_label;
         document.getElementById('ui-slider-label').innerText = L.slider_label;
         document.getElementById('ui-grid-label').innerText = L.grid_label;
         document.getElementById('search-input').placeholder = L.search_ph;
         
-        // 更新滑块数值显示
         document.getElementById('grid-display').innerText = `${state.grid} ${L.col_unit}`;
         document.getElementById('grid-min').innerText = `1 ${L.col_unit}`;
         document.getElementById('grid-max').innerText = `6 ${L.col_unit}`;
@@ -183,8 +197,15 @@
         });
     }
 
+    async function fetchGlobalTotal() {
+        const { count } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true });
+        document.getElementById('total-count').innerText = count.toLocaleString();
+    }
+
     async function refreshData(isNew = false) {
         if (isNew) { state.page = 0; state.allImages = []; document.getElementById('gallery').innerHTML = ""; }
+        const L = LANG_DICT[state.lang] || LANG_DICT["🇨🇳 简体中文"];
+        
         let query = mySupabase.from('botan_final').select('*', { count: 'exact' });
         query = query.lte('production_date', state.dateLimit);
         if (state.search) query = query.ilike('description', `%${state.search}%`);
@@ -193,10 +214,14 @@
 
         const { data, count, error } = await query;
         if (error) return;
+
+        // 更新右侧检索信息
+        document.getElementById('search-info').innerText = L.search_info.replace('{0}', count).replace('{1}', state.dateLimit);
+
         state.allImages = state.allImages.concat(data);
         renderCards(data);
         const btn = document.getElementById('load-more');
-        btn.innerText = (state.allImages.length >= count) ? LANG_DICT[state.lang].no_more : LANG_DICT[state.lang].load_more;
+        btn.innerText = (state.allImages.length >= count) ? L.no_more : L.load_more;
         btn.disabled = (state.allImages.length >= count);
     }
 
@@ -207,13 +232,15 @@
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
-                <div class="card-img-container"><img src="${item.image_url}" onclick="openLightbox(${cardIdx})" loading="lazy"></div>
+                <div style="background:#000; display:flex; justify-content:center; align-items:center;">
+                    <img src="${item.image_url}" onclick="openLightbox(${cardIdx})" loading="lazy" style="width:100%; height:auto; max-height:400px; object-fit:contain;">
+                </div>
                 <div class="card-info">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span class="date-tag">📅 ${item.production_date}</span>
                         <a style="color:#007bff; cursor:pointer; font-size:12px;" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">🔗 Info</a>
                     </div>
-                    <div class="expander-content" style="max-height:0; overflow:hidden; transition:0.3s; font-size:12px; color:var(--text-muted);">${item.description || ''}</div>
+                    <div class="expander-content" style="max-height:0; overflow:hidden; transition:0.3s; font-size:12px; color:var(--text-muted); line-height:1.5;">${item.description || ''}</div>
                 </div>
             `;
             container.appendChild(card);
@@ -231,6 +258,7 @@
     }
 
     document.getElementById('btn-search-go').onclick = () => { state.search = document.getElementById('search-input').value; refreshData(true); };
+    document.getElementById('search-input').onkeydown = (e) => { if(e.key === 'Enter') { state.search = e.target.value; refreshData(true); } };
     document.getElementById('lb-close').onclick = closeLightbox;
     document.getElementById('lb-prev').onclick = (e) => { e.stopPropagation(); moveLb(-1); };
     document.getElementById('lb-next').onclick = (e) => { e.stopPropagation(); moveLb(1); };
@@ -243,13 +271,13 @@
     };
     document.getElementById('grid-slider').oninput = (e) => {
         state.grid = e.target.value;
-        document.getElementById('grid-display').innerText = `${state.grid} ${LANG_DICT[state.lang].col_unit}`;
+        const L = LANG_DICT[state.lang] || LANG_DICT["🇨🇳 简体中文"];
+        document.getElementById('grid-display').innerText = `${state.grid} ${L.col_unit}`;
         document.getElementById('gallery').style.gridTemplateColumns = `repeat(${state.grid}, 1fr)`;
     };
     document.getElementById('load-more').onclick = () => { state.page++; refreshData(); };
 
     initUI();
-    document.getElementById('gallery').style.gridTemplateColumns = `repeat(${state.grid}, 1fr)`;
 </script>
 </body>
 </html>
