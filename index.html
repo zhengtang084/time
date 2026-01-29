@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博谈影像档案库 V66-Full-International</title>
+    <title>博谈影像档案库 V67-Detail-Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -32,33 +32,39 @@
         body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background-color: var(--main-bg); color: var(--text-main); margin: 0; display: flex; transition: all 0.3s ease; }
         #sidebar { width: 300px; background: var(--sidebar-bg); color: white; height: 100vh; position: fixed; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 100; }
         .sidebar-item { margin-bottom: 25px; }
-        .label-text { font-size: 14px; color: #bbb; margin-bottom: 8px; display: block;}
+        .label-text { font-size: 13px; color: #888; margin-bottom: 8px; display: block;}
         .current-val { color: var(--primary-color); font-weight: bold; font-family: monospace; }
-        .range-limits { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: -5px; }
-
+        
         .stats-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         #total-count { font-size: 24px; font-weight: bold; color: var(--primary-color); display: block; margin-top: 5px; }
 
         select, input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: var(--input-bg); color: white; box-sizing: border-box; outline: none; }
-        select option { background-color: #1e1e2e; color: white; }
-
-        .search-container { display: flex; gap: 8px; }
-        .btn-search { background: var(--primary-color); color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
-
+        
         .radio-group { display: flex; flex-direction: column; gap: 8px; }
         .radio-item { cursor: pointer; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.08); font-size: 13px; color: #ccc; }
         .radio-item.active { background: var(--primary-color); color: white; font-weight: bold; }
 
         #main-content { margin-left: 300px; padding: 40px; width: calc(100% - 300px); min-height: 100vh; }
-        .gallery { display: grid; gap: 25px; align-items: start; }
-        .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
-        .card img { width: 100%; height: auto; max-height: 400px; object-fit: contain; cursor: zoom-in; }
+        .gallery { display: grid; gap: 20px; align-items: start; }
         
+        /* 卡片样式优化 */
+        .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border-color); display: flex; flex-direction: column; }
+        .card-img-container { background: #000; width: 100%; display: flex; justify-content: center; align-items: center; }
+        .card img { width: 100%; height: auto; max-height: 450px; object-fit: contain; cursor: zoom-in; }
+        .card-info { padding: 15px; }
+        
+        /* 💡 修复点 1：日期颜色跟随主题颜色 (var(--text-main)) */
+        .item-date { font-size: 13px; color: var(--text-main); font-weight: 500; }
+        
+        /* 💡 修复点 2：标题点击展开样式 */
+        .item-title-link { color: #007bff; text-decoration: none; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .item-title-link:hover { text-decoration: underline; }
+
+        .description-panel { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 10px; }
+        .description-panel.open { max-height: 500px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color); }
+
         #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; }
         #lightbox-img { max-width: 90%; max-height: 75%; object-fit: contain; }
-        #lb-caption { width: 80%; max-width: 800px; color: #ddd; text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; backdrop-filter: blur(5px); }
-        .lb-btn { position: absolute; color: white; font-size: 40px; cursor: pointer; background: none; border: none; padding: 20px; }
-        #lb-close { top: 20px; right: 30px; } #lb-prev { left: 30px; } #lb-next { right: 30px; }
         #load-more { display: block; margin: 50px auto; padding: 12px 45px; background: var(--primary-color); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
@@ -66,76 +72,47 @@
 
 <div id="sidebar">
     <h2 id="ui-title">🏮 影像馆控制台</h2>
-    
-    <div class="sidebar-item">
-        <label class="label-text" id="ui-lang-label">🌐 语言切换</label>
-        <select id="lang-select" onchange="changeLang(this.value)"></select>
-    </div>
-
-    <div class="stats-box">
-        <span class="label-text" id="ui-stats-label">📊 全馆影像总计</span>
-        <span id="total-count">...</span>
-        <small id="ui-unit">卷</small>
-    </div>
-
-    <div class="sidebar-item">
-        <label class="label-text" id="ui-cat-label">📂 栏目筛选</label>
-        <div class="radio-group" id="category-group"></div>
-    </div>
-
-    <div class="sidebar-item">
-        <label class="label-text" id="ui-search-label">搜索档案内容</label>
-        <div class="search-container">
-            <input type="text" id="search-input">
-            <button class="btn-search" id="btn-search-go"><i class="fas fa-search"></i></button>
-        </div>
-    </div>
-    
+    <div class="sidebar-item"><label class="label-text" id="ui-lang-label">🌐 语言切换</label><select id="lang-select" onchange="changeLang(this.value)"></select></div>
+    <div class="stats-box"><span class="label-text" id="ui-stats-label">📊 全馆影像总计</span><span id="total-count">...</span><small id="ui-unit">卷</small></div>
+    <div class="sidebar-item"><label class="label-text" id="ui-cat-label">📂 栏目筛选</label><div class="radio-group" id="category-group"></div></div>
+    <div class="sidebar-item"><label class="label-text" id="ui-search-label">搜索档案内容</label><input type="text" id="search-input"></div>
     <div class="sidebar-item">
         <div class="label-row"><span class="label-text" id="ui-slider-label">⏳ 时间轴</span><span id="date-display" class="current-val"></span></div>
-        <input type="range" id="date-slider" class="slider">
-        <div class="range-limits"><span id="date-start">2014-02-12</span><span id="date-now"></span></div>
+        <input type="range" id="date-slider" style="width:100%">
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:5px;"><span id="date-start">2014-02-12</span><span id="date-now"></span></div>
     </div>
-
     <div class="sidebar-item">
         <div class="label-row"><span class="label-text" id="ui-grid-label">🖼️ 每行列数</span><span id="grid-display" class="current-val">3</span></div>
-        <input type="range" id="grid-slider" class="slider" min="1" max="6" value="3">
-        <div class="range-limits"><span id="grid-min">1</span><span id="grid-max">6</span></div>
+        <input type="range" id="grid-slider" min="1" max="6" value="3" style="width:100%">
     </div>
 </div>
 
 <div id="main-content">
     <h1 id="ui-main-title">⏳ 历史影像时间机器</h1>
-    <div id="search-info" style="margin-bottom: 25px; color: var(--text-muted); font-size: 14px; font-weight: 500;"></div>
-    
+    <div id="search-info" style="margin-bottom: 25px; color: var(--text-muted); font-size: 14px;"></div>
     <div class="gallery" id="gallery"></div>
     <button id="load-more">🔽 加载更多影像</button>
 </div>
 
-<div id="lightbox">
-    <button class="lb-btn" id="lb-close"><i class="fas fa-times"></i></button>
-    <button class="lb-btn" id="lb-prev"><i class="fas fa-chevron-left"></i></button>
+<div id="lightbox" onclick="this.style.display='none'">
     <img id="lightbox-img">
-    <div id="lb-caption"></div>
-    <button class="lb-btn" id="lb-next"><i class="fas fa-chevron-right"></i></button>
+    <div id="lb-caption" style="color:white; margin-top:20px; text-align:center; padding:0 20px;"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     const todayStr = new Date().toISOString().split('T')[0];
-
-    // 🌟 整合参考文件中的 10 国语言字典，并统一 key 名
     const LANG_DICT = {
-        "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换", "stats_label": "📊 全馆影像总计", "unit": "卷", "search_info": "🔍 在 {1} 之前检索到 {0} 卷影像", "search_label": "搜索档案内容", "search_ph": "关键词...", "load_more": "🔽 加载更多", "no_more": "✅ 已全部加载", "slider_label": "⏳ 时间轴", "cat_label": "📂 栏目筛选", "grid_label": "🖼️ 每行显示列数", "col_unit": "列", "cats": ["全部", "微博谈", "微历史", "微视野"] },
-        "🇭🇰 繁體中文": { "title": "🏮 影像館控制台", "main_title": "⏳ 歷史影像時間機器", "lang_label": "🌐 語言切換", "stats_label": "📊 全館影像總計", "unit": "卷", "search_info": "🔍 在 {1} 之前檢索到 {0} 卷影像", "search_label": "搜索檔案內容", "search_ph": "關鍵詞...", "load_more": "🔽 加載更多", "no_more": "✅ 已全部加載", "slider_label": "⏳ 時間軸", "cat_label": "📂 欄目篩選", "grid_label": "🖼️ 圖片列數", "col_unit": "列", "cats": ["全部", "微博談", "微歷史", "微視野"] },
-        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "stats_label": "📊 Global Total", "unit": "Items", "search_info": "🔍 Found {0} items before {1}", "search_label": "Search Archive", "search_ph": "Keywords...", "load_more": "🔽 Load More", "no_more": "✅ Completed", "slider_label": "⏳ Timeline", "cat_label": "📂 Categories", "grid_label": "🖼️ Grid Columns", "col_unit": "Cols", "cats": ["All", "Weibo Talk", "History", "Vision"] },
-        "🇯🇵 日本語": { "title": "🏮 コントロール", "main_title": "⏳ 歴史映像マシン", "lang_label": "🌐 言語切替", "stats_label": "📊 全アーカイブ総数", "unit": "巻", "search_info": "🔍 {1} までに {0} 件の映像が見つかりました", "search_label": "検索", "search_ph": "キーワード...", "load_more": "🔽 もっと見る", "no_more": "✅ 全表示", "slider_label": "⏳ タイムライン", "cat_label": "📂 カテゴリ", "grid_label": "🖼️ 表示列数", "col_unit": "列", "cats": ["すべて", "微博談", "微歴史", "微視野"] },
-        "🇰🇷 한국어": { "title": "🏮 제어판", "main_title": "⏳ 역사 타임머신", "lang_label": "🌐 언어 변경", "stats_label": "📊 아카이브 합계", "unit": "권", "search_info": "🔍 {1} 이전에 {0}개의 영상을 찾았습니다", "search_label": "검색", "search_ph": "검색어...", "load_more": "🔽 더 보기", "no_more": "✅ 완료", "slider_label": "⏳ 시간축", "cat_label": "📂 카테고리", "grid_label": "🖼️ 열 개수", "col_unit": "열", "cats": ["전체", "微博談", "微歷史", "微視野"] },
-        "🇩🇪 Deutsch": { "title": "🏮 Konsole", "main_title": "⏳ Zeitmaschine", "lang_label": "🌐 Sprache", "stats_label": "📊 Archiv Gesamt", "unit": "Bilder", "search_info": "🔍 {0} Bilder vor {1} gefunden", "search_label": "Suche", "search_ph": "Stichwort...", "load_more": "🔽 Mehr", "no_more": "✅ Alles geladen", "slider_label": "⏳ Zeitachse", "cat_label": "📂 Kategorien", "grid_label": "🖼️ Spalten", "col_unit": "Sp.", "cats": ["Alle", "Diskussion", "Geschichte", "Vision"] },
-        "🇫🇷 Français": { "title": "🏮 Console", "main_title": "⏳ Machine du temps", "lang_label": "🌐 Langue", "stats_label": "📊 Total des archives", "unit": "Images", "search_info": "🔍 {0} images trouvées avant {1}", "search_label": "Rechercher", "search_ph": "Mots-clés...", "load_more": "🔽 Plus", "no_more": "✅ Terminé", "slider_label": "⏳ Axe temporel", "cat_label": "📂 Catégories", "grid_label": "🖼️ Colonnes", "col_unit": "Cols", "cats": ["Tout", "Débats", "Histoire", "Vision"] },
-        "🇮🇷 فارسی": { "title": "🏮 کنسول", "main_title": "⏳ ماشین زمان", "lang_label": "🌐 زبان", "stats_label": "📊 کل بایگانی", "unit": "مورد", "search_info": "🔍 {0} تصویر قبل از {1} پیدا شد", "search_label": "جستجوی آرشیو", "search_ph": "کلمات کلیدی...", "load_more": "🔽 بیشتر", "no_more": "✅ تمام شد", "slider_label": "⏳ خط زمانی", "cat_label": "📂 دسته‌ها", "grid_label": "🖼️ ستون‌ها", "col_unit": "ستون", "cats": ["همه", "گفتگو", "تاریخ", "چشم انداز"] },
-        "🇹🇭 ไทย": { "title": "🏮 แผงควบคุม", "main_title": "⏳ เครื่องย้อนเวลา", "lang_label": "🌐 เปลี่ยนภาษา", "stats_label": "📊 คลังทั้งหมด", "unit": "รายการ", "search_info": "🔍 พบ {0} รายการก่อน {1}", "search_label": "ค้นหา", "search_ph": "คำค้นหา...", "load_more": "🔽 โหลดเพิ่ม", "no_more": "✅ ครบแล้ว", "slider_label": "⏳ แกนเวลา", "cat_label": "📂 หมวดหมู่", "grid_label": "🖼️ คอลัมน์", "col_unit": "แถว", "cats": ["ทั้งหมด", "พูดคุย", "ประวัติศาสตร์", "วิสัยทัศน์"] },
-        "🇻🇳 Tiếng Việt": { "title": "🏮 Bảng điều khiển", "main_title": "⏳ Cỗ máy thời gian", "lang_label": "🌐 Ngôn ngữ", "stats_label": "📊 Tổng kho ảnh", "unit": "Mục", "search_info": "🔍 Tìm thấy {0} mục trước {1}", "search_label": "Tìm kiếm", "search_ph": "Từ khóa...", "load_more": "🔽 Tải thêm", "no_more": "✅ Đã tải hết", "slider_label": "⏳ Trục thời gian", "cat_label": "📂 Danh mục", "grid_label": "🖼️ Số cột", "col_unit": "Cột", "cats": ["Tất cả", "Thảo luận", "Lịch sử", "Tầm nhìn"] }
+        "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换", "stats_label": "📊 全馆影像总计", "unit": "卷", "search_info": "🔍 在 {1} 之前检索到 {0} 卷影像", "search_label": "搜索档案内容", "slider_label": "⏳ 时间轴", "grid_label": "🖼️ 每行列数", "col_unit": "列", "load_more": "🔽 加载更多", "no_more": "✅ 已全部加载", "cats": ["全部", "微博谈", "微历史", "微视野"] },
+        "🇭🇰 繁體中文": { "title": "🏮 影像館控制台", "main_title": "⏳ 歷史影像時間機器", "lang_label": "🌐 語言切換", "stats_label": "📊 全館影像總計", "unit": "卷", "search_info": "🔍 在 {1} 之前檢索到 {0} 卷影像", "search_label": "搜索檔案內容", "slider_label": "⏳ 時間軸", "grid_label": "🖼️ 圖片列數", "col_unit": "列", "cats": ["全部", "微博談", "微歷史", "微視野"] },
+        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "stats_label": "📊 Global Total", "unit": "Items", "search_info": "🔍 Found {0} items before {1}", "search_label": "Search", "slider_label": "⏳ Timeline", "grid_label": "🖼️ Grid Columns", "col_unit": "Cols", "cats": ["All", "Weibo Talk", "History", "Vision"] },
+        "🇯🇵 日本語": { "title": "🏮 コントロール", "main_title": "⏳ 歴史映像マシン", "lang_label": "🌐 言語切替", "stats_label": "📊 総数", "unit": "巻", "search_info": "🔍 {1} までに {0} 件見つかりました", "search_label": "検索", "slider_label": "⏳ タイムライン", "grid_label": "🖼️ 表示列数", "col_unit": "列", "cats": ["すべて", "微博談", "微歴史", "微視野"] },
+        "🇰🇷 한국어": { "title": "🏮 제어판", "main_title": "⏳ 역사 타임머신", "lang_label": "🌐 언어 변경", "stats_label": "📊 아카이브 합계", "unit": "권", "search_info": "🔍 {1} 이전에 {0}개의 영상을 찾았습니다", "search_label": "검색", "slider_label": "⏳ 시간축", "grid_label": "🖼️ 열 개수", "col_unit": "열", "cats": ["전체", "微博談", "微歷史", "微視野"] },
+        "🇩🇪 Deutsch": { "title": "🏮 Konsole", "main_title": "⏳ Zeitmaschine", "lang_label": "🌐 Sprache", "stats_label": "📊 Archiv Gesamt", "unit": "Bilder", "search_info": "🔍 {0} Bilder vor {1} gefunden", "search_label": "Suche", "slider_label": "⏳ Zeitachse", "grid_label": "🖼️ Spalten", "col_unit": "Sp.", "cats": ["Alle", "Diskussion", "Geschichte", "Vision"] },
+        "🇫🇷 Français": { "title": "🏮 Console", "main_title": "⏳ Machine du temps", "lang_label": "🌐 Langue", "stats_label": "📊 Total des archives", "unit": "Images", "search_info": "🔍 {0} images trouvées avant {1}", "search_label": "Rechercher", "slider_label": "⏳ Axe temporel", "grid_label": "🖼️ Colonnes", "col_unit": "Cols", "cats": ["Tout", "Débats", "Histoire", "Vision"] },
+        "🇮🇷 فارسی": { "title": "🏮 کنسول", "main_title": "⏳ ماشین زمان", "lang_label": "🌐 زبان", "stats_label": "📊 کل بایگانی", "unit": "مورد", "search_info": "🔍 {0} تصویر قبل از {1} پیدا شد", "search_label": "جستجوی آرشیو", "slider_label": "⏳ خط زمانی", "grid_label": "🖼️ ستون‌ها", "col_unit": "ستون", "cats": ["همه", "گفتگو", "تاریخ", "چشم انداز"] },
+        "🇹🇭 ไทย": { "title": "🏮 แผงควบคุม", "main_title": "⏳ เครื่องย้อนเวลา", "lang_label": "🌐 เปลี่ยนภาษา", "stats_label": "📊 คลังทั้งหมด", "unit": "รายการ", "search_info": "🔍 พบ {0} รายการก่อน {1}", "search_label": "ค้นหา", "slider_label": "⏳ แกนเวลา", "grid_label": "🖼️ คอลัมน์", "col_unit": "แถว", "cats": ["ทั้งหมด", "พูดคุย", "ประวัติศาสตร์", "วิสัยทัศน์"] },
+        "🇻🇳 Tiếng Việt": { "title": "🏮 Bảng điều khiển", "main_title": "⏳ Cỗ máy thời gian", "lang_label": "🌐 Ngôn ngữ", "stats_label": "📊 Tổng kho ảnh", "unit": "Mục", "search_info": "🔍 Tìm thấy {0} mục trước {1}", "search_label": "Tìm kiếm", "slider_label": "⏳ Trục thời gian", "grid_label": "🖼️ Số cột", "col_unit": "Cột", "cats": ["Tất cả", "Thảo luận", "Lịch sử", "Tầm nhìn"] }
     };
 
     const SB_URL = "https://ztsdhjjnydrnsxgsheyb.supabase.co";
@@ -178,11 +155,8 @@
         document.getElementById('ui-search-label').innerText = L.search_label;
         document.getElementById('ui-slider-label').innerText = L.slider_label;
         document.getElementById('ui-grid-label').innerText = L.grid_label;
-        document.getElementById('search-input').placeholder = L.search_ph || "...";
         
         document.getElementById('grid-display').innerText = `${state.grid} ${L.col_unit}`;
-        document.getElementById('grid-min').innerText = `1 ${L.col_unit}`;
-        document.getElementById('grid-max').innerText = `6 ${L.col_unit}`;
 
         const catGroup = document.getElementById('category-group');
         catGroup.innerHTML = "";
@@ -204,23 +178,19 @@
 
     async function refreshData(isNew = false) {
         if (isNew) { state.page = 0; state.allImages = []; document.getElementById('gallery').innerHTML = ""; }
-        const L = LANG_DICT[state.lang] || LANG_DICT["🇨🇳 简体中文"];
+        const L = LANG_DICT[state.lang];
         
         let query = mySupabase.from('botan_final').select('*', { count: 'exact' });
         query = query.lte('production_date', state.dateLimit);
         if (state.search) query = query.ilike('description', `%${state.search}%`);
         if (state.category !== "全部") query = query.eq('category', state.category);
         
-        const from = state.page * state.pageSize;
-        query = query.order('production_date', { ascending: false }).range(from, from + state.pageSize - 1);
+        query = query.order('production_date', { ascending: false }).range(state.page * state.pageSize, (state.page + 1) * state.pageSize - 1);
 
         const { data, count, error } = await query;
         if (error || !data) return;
 
-        // 🌟 修复图片显示逻辑：更新检索提示信息
-        document.getElementById('search-info').innerText = (L.search_info || "")
-            .replace('{0}', count.toLocaleString())
-            .replace('{1}', state.dateLimit);
+        document.getElementById('search-info').innerText = L.search_info.replace('{0}', count.toLocaleString()).replace('{1}', state.dateLimit);
 
         state.allImages = state.allImages.concat(data);
         renderCards(data);
@@ -237,38 +207,34 @@
             const cardIdx = state.allImages.length - data.length + index;
             const card = document.createElement('div');
             card.className = 'card';
+            
+            // 💡 渲染逻辑修改：日期颜色跟随主题，Info 链接显示数据库 Title
             card.innerHTML = `
-                <div style="background:#000; display:flex; justify-content:center; align-items:center;">
-                    <img src="${item.image_url}" onclick="openLightbox(${cardIdx})" loading="lazy" style="width:100%; height:auto; max-height:400px; object-fit:contain;">
-                </div>
-                <div style="padding:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                        <span style="font-size:12px; color:var(--primary-color);">📅 ${item.production_date}</span>
-                        <a style="color:#007bff; cursor:pointer; font-size:12px;" onclick="this.parentElement.nextElementSibling.style.maxHeight = this.parentElement.nextElementSibling.style.maxHeight === 'none' ? '0' : 'none'">🔗 Info</a>
+                <div class="card-img-container"><img src="${item.image_url}" onclick="openLightbox(${cardIdx})" loading="lazy"></div>
+                <div class="card-info">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="item-date">📅 ${item.production_date}</span>
+                        <a class="item-title-link" onclick="toggleInfo(this)">🔗 ${item.title || 'Info'}</a>
                     </div>
-                    <div style="max-height:0; overflow:hidden; transition:0.3s; font-size:12px; color:var(--text-muted); line-height:1.5;">${item.description || ''}</div>
+                    <div class="description-panel">${item.description || ''}</div>
                 </div>
             `;
             container.appendChild(card);
         });
     }
 
-    let lbIdx = 0;
-    function openLightbox(i) { lbIdx = i; document.getElementById('lightbox').style.display='flex'; updateLbContent(); document.body.style.overflow='hidden'; }
-    function closeLightbox() { document.getElementById('lightbox').style.display='none'; document.body.style.overflow='auto'; }
-    function moveLb(step) { lbIdx = (lbIdx + step + state.allImages.length) % state.allImages.length; updateLbContent(); }
-    function updateLbContent() {
-        const item = state.allImages[lbIdx];
-        document.getElementById('lightbox-img').src = item.image_url;
-        document.getElementById('lb-caption').innerHTML = `<b>${item.production_date}</b> | ${item.title || ''}<br><small>${item.description || ''}</small>`;
+    function toggleInfo(btn) {
+        const panel = btn.parentElement.nextElementSibling;
+        panel.classList.toggle('open');
     }
 
-    document.getElementById('btn-search-go').onclick = () => { state.search = document.getElementById('search-input').value; refreshData(true); };
-    document.getElementById('search-input').onkeydown = (e) => { if(e.key === 'Enter') { state.search = e.target.value; refreshData(true); } };
-    document.getElementById('lb-close').onclick = closeLightbox;
-    document.getElementById('lb-prev').onclick = (e) => { e.stopPropagation(); moveLb(-1); };
-    document.getElementById('lb-next').onclick = (e) => { e.stopPropagation(); moveLb(1); };
-    document.getElementById('lightbox').onclick = (e) => { if(e.target.id === 'lightbox') closeLightbox(); };
+    function openLightbox(i) {
+        const item = state.allImages[i];
+        document.getElementById('lightbox-img').src = item.image_url;
+        document.getElementById('lb-caption').innerText = item.description || '';
+        document.getElementById('lightbox').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
 
     document.getElementById('date-slider').oninput = (e) => {
         state.dateLimit = new Date(parseInt(e.target.value)).toISOString().split('T')[0];
@@ -277,9 +243,12 @@
     };
     document.getElementById('grid-slider').oninput = (e) => {
         state.grid = e.target.value;
-        const L = LANG_DICT[state.lang] || LANG_DICT["🇨🇳 简体中文"];
-        document.getElementById('grid-display').innerText = `${state.grid} ${L.col_unit}`;
+        updateLanguage();
         document.getElementById('gallery').style.gridTemplateColumns = `repeat(${state.grid}, 1fr)`;
+    };
+    document.getElementById('search-input').oninput = (e) => {
+        state.search = e.target.value;
+        clearTimeout(window.st); window.st = setTimeout(() => refreshData(true), 500);
     };
     document.getElementById('load-more').onclick = () => { state.page++; refreshData(); };
 
