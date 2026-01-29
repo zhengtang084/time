@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博谈影像档案库 V65-Final</title>
+    <title>博谈影像档案库 V66-Full-International</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -36,7 +36,6 @@
         .current-val { color: var(--primary-color); font-weight: bold; font-family: monospace; }
         .range-limits { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: -5px; }
 
-        /* 统计卡片样式 */
         .stats-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         #total-count { font-size: 24px; font-weight: bold; color: var(--primary-color); display: block; margin-top: 5px; }
 
@@ -125,17 +124,18 @@
 <script>
     const todayStr = new Date().toISOString().split('T')[0];
 
+    // 🌟 整合参考文件中的 10 国语言字典，并统一 key 名
     const LANG_DICT = {
-        "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换", "search_label": "搜索档案内容", "search_ph": "关键词...", "load_more": "🔽 加载更多", "no_more": "✅ 已全部加载", "slider_label": "⏳ 时间轴", "cat_label": "📂 栏目筛选", "grid_label": "🖼️ 每行显示列数", "col_unit": "列", "cats": ["全部", "微博谈", "微历史", "微视野"] },
-        "🇭🇰 繁體中文": { "title": "🏮 影像館控制台", "main_title": "⏳ 歷史影像時間機器", "lang_label": "🌐 語言切換", "search_label": "搜索檔案內容", "search_ph": "關鍵詞...", "load_more": "🔽 加載更多", "no_more": "✅ 已全部加載", "slider_label": "⏳ 時間軸", "cat_label": "📂 欄目篩選", "grid_label": "🖼️ 圖片列數", "col_unit": "列", "cats": ["全部", "微博談", "微歷史", "微視野"] },
-        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "search_label": "Search Archive", "search_ph": "Keywords...", "load_more": "🔽 Load More", "no_more": "✅ Completed", "slider_label": "⏳ Timeline", "cat_label": "📂 Categories", "grid_label": "🖼️ Grid Columns", "col_unit": "Cols", "cats": ["All", "Weibo Talk", "History", "Vision"] },
-        "🇯🇵 日本語": { "title": "🏮 コントロール", "main_title": "⏳ 歴史映像マシン", "lang_label": "🌐 言語切替", "search_label": "検索", "search_ph": "キーワード...", "load_more": "🔽 もっと見る", "no_more": "✅ 全表示", "slider_label": "⏳ タイムライン", "cat_label": "📂 カテゴリ", "grid_label": "🖼️ 表示列数", "col_unit": "列", "cats": ["すべて", "微博談", "微歴史", "微視野"] },
-        "🇰🇷 한국어": { "title": "🏮 제어판", "main_title": "⏳ 역사 타임머신", "lang_label": "🌐 언어 변경", "search_label": "검색", "search_ph": "검색어...", "load_more": "🔽 더 보기", "no_more": "✅ 완료", "slider_label": "⏳ 시간축", "cat_label": "📂 카테고리", "grid_label": "🖼️ 열 개수", "col_unit": "열", "cats": ["전체", "微博談", "微歷史", "微視野"] },
-        "🇩🇪 Deutsch": { "title": "🏮 Konsole", "main_title": "⏳ Zeitmaschine", "lang_label": "🌐 Sprache", "search_label": "Suche", "search_ph": "Stichwort...", "load_more": "🔽 Mehr", "no_more": "✅ Alles geladen", "slider_label": "⏳ Zeitachse", "cat_label": "📂 Kategorien", "grid_label": "🖼️ Spalten", "col_unit": "Sp.", "cats": ["Alle", "Diskussion", "Geschichte", "Vision"] },
-        "🇫🇷 Français": { "title": "🏮 Console", "main_title": "⏳ Machine du temps", "lang_label": "🌐 Langue", "search_label": "Rechercher", "search_ph": "Mots-clés...", "load_more": "🔽 Plus", "no_more": "✅ Terminé", "slider_label": "⏳ Axe temporel", "cat_label": "📂 Catégories", "grid_label": "🖼️ Colonnes", "col_unit": "Cols", "cats": ["Tout", "Débats", "Histoire", "Vision"] },
-        "🇮🇷 فارسی": { "title": "🏮 کنسول", "main_title": "⏳ ماشین زمان", "lang_label": "🌐 زبان", "search_label": "جستجوی آرشیو", "search_ph": "کلمات کلیدی...", "load_more": "🔽 بیشتر", "no_more": "✅ تمام شد", "slider_label": "⏳ خط زمانی", "cat_label": "📂 دسته‌ها", "grid_label": "🖼️ ستون‌ها", "col_unit": "ستون", "cats": ["همه", "گفتگو", "تاریخ", "چشم انداز"] },
-        "🇹🇭 ไทย": { "title": "🏮 แผงควบคุม", "main_title": "⏳ เครื่องย้อนเวลา", "lang_label": "🌐 เปลี่ยนภาษา", "search_label": "ค้นหา", "search_ph": "คำค้นหา...", "load_more": "🔽 โหลดเพิ่ม", "no_more": "✅ ครบแล้ว", "slider_label": "⏳ แกนเวลา", "cat_label": "📂 หมวดหมู่", "grid_label": "🖼️ คอลัมน์", "col_unit": "แถว", "cats": ["ทั้งหมด", "พูดคุย", "ประวัติศาสตร์", "วิสัยทัศน์"] },
-        "🇻🇳 Tiếng Việt": { "title": "🏮 Bảng điều khiển", "main_title": "⏳ Cỗ máy thời gian", "lang_label": "🌐 Ngôn ngữ", "search_label": "Tìm kiếm", "search_ph": "Từ khóa...", "load_more": "🔽 Tải thêm", "no_more": "✅ Đã tải hết", "slider_label": "⏳ Trục thời gian", "cat_label": "📂 Danh mục", "grid_label": "🖼️ Số cột", "col_unit": "Cột", "cats": ["Tất cả", "Thảo luận", "Lịch sử", "Tầm nhìn"] }
+        "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换", "stats_label": "📊 全馆影像总计", "unit": "卷", "search_info": "🔍 在 {1} 之前检索到 {0} 卷影像", "search_label": "搜索档案内容", "search_ph": "关键词...", "load_more": "🔽 加载更多", "no_more": "✅ 已全部加载", "slider_label": "⏳ 时间轴", "cat_label": "📂 栏目筛选", "grid_label": "🖼️ 每行显示列数", "col_unit": "列", "cats": ["全部", "微博谈", "微历史", "微视野"] },
+        "🇭🇰 繁體中文": { "title": "🏮 影像館控制台", "main_title": "⏳ 歷史影像時間機器", "lang_label": "🌐 語言切換", "stats_label": "📊 全館影像總計", "unit": "卷", "search_info": "🔍 在 {1} 之前檢索到 {0} 卷影像", "search_label": "搜索檔案內容", "search_ph": "關鍵詞...", "load_more": "🔽 加載更多", "no_more": "✅ 已全部加載", "slider_label": "⏳ 時間軸", "cat_label": "📂 欄目篩選", "grid_label": "🖼️ 圖片列數", "col_unit": "列", "cats": ["全部", "微博談", "微歷史", "微視野"] },
+        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "stats_label": "📊 Global Total", "unit": "Items", "search_info": "🔍 Found {0} items before {1}", "search_label": "Search Archive", "search_ph": "Keywords...", "load_more": "🔽 Load More", "no_more": "✅ Completed", "slider_label": "⏳ Timeline", "cat_label": "📂 Categories", "grid_label": "🖼️ Grid Columns", "col_unit": "Cols", "cats": ["All", "Weibo Talk", "History", "Vision"] },
+        "🇯🇵 日本語": { "title": "🏮 コントロール", "main_title": "⏳ 歴史映像マシン", "lang_label": "🌐 言語切替", "stats_label": "📊 全アーカイブ総数", "unit": "巻", "search_info": "🔍 {1} までに {0} 件の映像が見つかりました", "search_label": "検索", "search_ph": "キーワード...", "load_more": "🔽 もっと見る", "no_more": "✅ 全表示", "slider_label": "⏳ タイムライン", "cat_label": "📂 カテゴリ", "grid_label": "🖼️ 表示列数", "col_unit": "列", "cats": ["すべて", "微博談", "微歴史", "微視野"] },
+        "🇰🇷 한국어": { "title": "🏮 제어판", "main_title": "⏳ 역사 타임머신", "lang_label": "🌐 언어 변경", "stats_label": "📊 아카이브 합계", "unit": "권", "search_info": "🔍 {1} 이전에 {0}개의 영상을 찾았습니다", "search_label": "검색", "search_ph": "검색어...", "load_more": "🔽 더 보기", "no_more": "✅ 완료", "slider_label": "⏳ 시간축", "cat_label": "📂 카테고리", "grid_label": "🖼️ 열 개수", "col_unit": "열", "cats": ["전체", "微博談", "微歷史", "微視野"] },
+        "🇩🇪 Deutsch": { "title": "🏮 Konsole", "main_title": "⏳ Zeitmaschine", "lang_label": "🌐 Sprache", "stats_label": "📊 Archiv Gesamt", "unit": "Bilder", "search_info": "🔍 {0} Bilder vor {1} gefunden", "search_label": "Suche", "search_ph": "Stichwort...", "load_more": "🔽 Mehr", "no_more": "✅ Alles geladen", "slider_label": "⏳ Zeitachse", "cat_label": "📂 Kategorien", "grid_label": "🖼️ Spalten", "col_unit": "Sp.", "cats": ["Alle", "Diskussion", "Geschichte", "Vision"] },
+        "🇫🇷 Français": { "title": "🏮 Console", "main_title": "⏳ Machine du temps", "lang_label": "🌐 Langue", "stats_label": "📊 Total des archives", "unit": "Images", "search_info": "🔍 {0} images trouvées avant {1}", "search_label": "Rechercher", "search_ph": "Mots-clés...", "load_more": "🔽 Plus", "no_more": "✅ Terminé", "slider_label": "⏳ Axe temporel", "cat_label": "📂 Catégories", "grid_label": "🖼️ Colonnes", "col_unit": "Cols", "cats": ["Tout", "Débats", "Histoire", "Vision"] },
+        "🇮🇷 فارسی": { "title": "🏮 کنسول", "main_title": "⏳ ماشین زمان", "lang_label": "🌐 زبان", "stats_label": "📊 کل بایگانی", "unit": "مورد", "search_info": "🔍 {0} تصویر قبل از {1} پیدا شد", "search_label": "جستجوی آرشیو", "search_ph": "کلمات کلیدی...", "load_more": "🔽 بیشتر", "no_more": "✅ تمام شد", "slider_label": "⏳ خط زمانی", "cat_label": "📂 دسته‌ها", "grid_label": "🖼️ ستون‌ها", "col_unit": "ستون", "cats": ["همه", "گفتگو", "تاریخ", "چشم انداز"] },
+        "🇹🇭 ไทย": { "title": "🏮 แผงควบคุม", "main_title": "⏳ เครื่องย้อนเวลา", "lang_label": "🌐 เปลี่ยนภาษา", "stats_label": "📊 คลังทั้งหมด", "unit": "รายการ", "search_info": "🔍 พบ {0} รายการก่อน {1}", "search_label": "ค้นหา", "search_ph": "คำค้นหา...", "load_more": "🔽 โหลดเพิ่ม", "no_more": "✅ ครบแล้ว", "slider_label": "⏳ แกนเวลา", "cat_label": "📂 หมวดหมู่", "grid_label": "🖼️ คอลัมน์", "col_unit": "แถว", "cats": ["ทั้งหมด", "พูดคุย", "ประวัติศาสตร์", "วิสัยทัศน์"] },
+        "🇻🇳 Tiếng Việt": { "title": "🏮 Bảng điều khiển", "main_title": "⏳ Cỗ máy thời gian", "lang_label": "🌐 Ngôn ngữ", "stats_label": "📊 Tổng kho ảnh", "unit": "Mục", "search_info": "🔍 Tìm thấy {0} mục trước {1}", "search_label": "Tìm kiếm", "search_ph": "Từ khóa...", "load_more": "🔽 Tải thêm", "no_more": "✅ Đã tải hết", "slider_label": "⏳ Trục thời gian", "cat_label": "📂 Danh mục", "grid_label": "🖼️ Số cột", "col_unit": "Cột", "cats": ["Tất cả", "Thảo luận", "Lịch sử", "Tầm nhìn"] }
     };
 
     const SB_URL = "https://ztsdhjjnydrnsxgsheyb.supabase.co";
@@ -161,7 +161,7 @@
         document.getElementById('date-display').innerText = todayStr;
 
         updateLanguage();
-        fetchGlobalTotal(); // 获取左侧总计
+        fetchGlobalTotal(); 
         refreshData(true);
     }
 
@@ -178,7 +178,7 @@
         document.getElementById('ui-search-label').innerText = L.search_label;
         document.getElementById('ui-slider-label').innerText = L.slider_label;
         document.getElementById('ui-grid-label').innerText = L.grid_label;
-        document.getElementById('search-input').placeholder = L.search_ph;
+        document.getElementById('search-input').placeholder = L.search_ph || "...";
         
         document.getElementById('grid-display').innerText = `${state.grid} ${L.col_unit}`;
         document.getElementById('grid-min').innerText = `1 ${L.col_unit}`;
@@ -199,7 +199,7 @@
 
     async function fetchGlobalTotal() {
         const { count } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true });
-        document.getElementById('total-count').innerText = count.toLocaleString();
+        document.getElementById('total-count').innerText = count ? count.toLocaleString() : "0";
     }
 
     async function refreshData(isNew = false) {
@@ -210,16 +210,21 @@
         query = query.lte('production_date', state.dateLimit);
         if (state.search) query = query.ilike('description', `%${state.search}%`);
         if (state.category !== "全部") query = query.eq('category', state.category);
-        query = query.order('production_date', { ascending: false }).range(state.page * state.pageSize, (state.page + 1) * state.pageSize - 1);
+        
+        const from = state.page * state.pageSize;
+        query = query.order('production_date', { ascending: false }).range(from, from + state.pageSize - 1);
 
         const { data, count, error } = await query;
-        if (error) return;
+        if (error || !data) return;
 
-        // 更新右侧检索信息
-        document.getElementById('search-info').innerText = L.search_info.replace('{0}', count).replace('{1}', state.dateLimit);
+        // 🌟 修复图片显示逻辑：更新检索提示信息
+        document.getElementById('search-info').innerText = (L.search_info || "")
+            .replace('{0}', count.toLocaleString())
+            .replace('{1}', state.dateLimit);
 
         state.allImages = state.allImages.concat(data);
         renderCards(data);
+        
         const btn = document.getElementById('load-more');
         btn.innerText = (state.allImages.length >= count) ? L.no_more : L.load_more;
         btn.disabled = (state.allImages.length >= count);
@@ -227,6 +232,7 @@
 
     function renderCards(data) {
         const container = document.getElementById('gallery');
+        container.style.gridTemplateColumns = `repeat(${state.grid}, 1fr)`;
         data.forEach((item, index) => {
             const cardIdx = state.allImages.length - data.length + index;
             const card = document.createElement('div');
@@ -235,12 +241,12 @@
                 <div style="background:#000; display:flex; justify-content:center; align-items:center;">
                     <img src="${item.image_url}" onclick="openLightbox(${cardIdx})" loading="lazy" style="width:100%; height:auto; max-height:400px; object-fit:contain;">
                 </div>
-                <div class="card-info">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span class="date-tag">📅 ${item.production_date}</span>
-                        <a style="color:#007bff; cursor:pointer; font-size:12px;" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">🔗 Info</a>
+                <div style="padding:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                        <span style="font-size:12px; color:var(--primary-color);">📅 ${item.production_date}</span>
+                        <a style="color:#007bff; cursor:pointer; font-size:12px;" onclick="this.parentElement.nextElementSibling.style.maxHeight = this.parentElement.nextElementSibling.style.maxHeight === 'none' ? '0' : 'none'">🔗 Info</a>
                     </div>
-                    <div class="expander-content" style="max-height:0; overflow:hidden; transition:0.3s; font-size:12px; color:var(--text-muted); line-height:1.5;">${item.description || ''}</div>
+                    <div style="max-height:0; overflow:hidden; transition:0.3s; font-size:12px; color:var(--text-muted); line-height:1.5;">${item.description || ''}</div>
                 </div>
             `;
             container.appendChild(card);
