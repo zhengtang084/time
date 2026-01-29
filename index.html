@@ -124,7 +124,9 @@
         }
 
         try {
-            // 根据你的截图，表名改为 botan_final
+            // 调试信息：尝试连接
+            console.log("正在尝试读取 botan_final 表...");
+            
             let query = mySupabase
                 .from('botan_final')
                 .select('*', { count: 'exact' })
@@ -137,7 +139,12 @@
 
             const { data, count, error } = await query;
 
-            if (error) throw error;
+            // 如果报错，直接把错误对象弹出来看
+            if (error) {
+                console.error("详细错误:", error);
+                alert("数据库报错: " + error.message + "\n代码: " + error.code);
+                return;
+            }
 
             if (count !== null) {
                 document.getElementById('total-count').innerText = count + " 卷";
@@ -153,11 +160,10 @@
                 document.getElementById('load-more').disabled = true;
             }
         } catch (err) {
-            console.error("加载失败:", err.message);
-            alert("数据库连接失败，请检查 RLS 策略设置。");
+            console.error("网络异常:", err);
+            alert("无法连接到网络，请检查代理或网络环境。");
         }
     }
-
     // 3. 渲染到页面
     function renderGallery(images) {
         const container = document.getElementById('gallery');
