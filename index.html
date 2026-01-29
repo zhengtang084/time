@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博谈影像档案库 V59-Pro</title>
+    <title>博谈影像档案库 ChinaTime</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary-color: #ff4b4b; --sidebar-bg: #1e1e2e; }
@@ -65,7 +65,7 @@
 
 <div id="sidebar">
     <h2 id="ui-title">🏮 影像馆控制台</h2>
-    <div class="sidebar-item"><label class="label-text" id="ui-lang-label">🌐 语言切换</label><select id="lang-select"></select></div>
+    <div class="sidebar-item"><label class="label-text" id="ui-lang-label">🌐 语言切换 / Language</label><select id="lang-select"></select></div>
     <div class="stats-card"><span class="label-text" id="ui-stats-label">📊 全馆影像总计</span><span id="total-count">...</span><small id="ui-unit">卷</small></div>
     <div class="sidebar-item"><label class="label-text" id="ui-cat-label">📂 栏目筛选</label><div class="radio-group" id="category-group"></div></div>
     <div class="sidebar-item"><div class="label-row"><span class="label-text" id="ui-search-label">搜索档案内容</span></div><input type="text" id="search-input"></div>
@@ -99,8 +99,8 @@
 <script>
     const LANG_DICT = {
         "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换", "stats_label": "📊 全馆影像总计", "unit": "卷", "total_found": "🔍 检索到 {0} 卷 (截至 {1})", "search_ph": "搜索...", "load_more": "🔽 加载更多 ({0}/{1})", "no_more": "✅ 已加载全部", "slider": "⏳ 时间轴截止", "cat_label": "📂 栏目筛选", "grid_label": "🖼️ 图片列数", "cats": ["全部", "微博谈", "微视野", "微历史"] },
-        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "stats_label": "📊 Total Archives", "unit": "Items", "total_found": "🔍 Found {0} items before {1}", "search_ph": "Search...", "load_more": "🔽 Load More ({0}/{1})", "no_more": "✅ Completed", "slider": "⏳ Cutoff Date", "cat_label": "📂 Categories", "grid_label": "🖼️ Columns", "cats": ["All", "微博谈", "微视野", "微历史"] },
         "🇭🇰 繁體中文": { "title": "🏮 影像館控制台", "main_title": "⏳ 歷史影像時間機器", "lang_label": "🌐 語言切換", "stats_label": "📊 全館影像總計", "unit": "卷", "total_found": "🔍 檢索到 {0} 卷影像", "search_ph": "搜索...", "load_more": "🔽 加載更多 ({0}/{1})", "no_more": "✅ 已加載全部", "slider": "⏳ 時間軸截止", "cat_label": "📂 欄目篩選", "grid_label": "🖼️ 圖片列數", "cats": ["全部", "微博談", "微視野", "微歷史"] },
+        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ Time Machine", "lang_label": "🌐 Language", "stats_label": "📊 Total Archives", "unit": "Items", "total_found": "🔍 Found {0} items before {1}", "search_ph": "Search...", "load_more": "🔽 Load More ({0}/{1})", "no_more": "✅ Completed", "slider": "⏳ Cutoff Date", "cat_label": "📂 Categories", "grid_label": "🖼️ Columns", "cats": ["All", "微博谈", "微视野", "微历史"] },
         "🇯🇵 日本語": { "title": "🏮 コントロール", "main_title": "⏳ 歴史映像マシン", "lang_label": "🌐 言語切替", "stats_label": "📊 総数", "unit": "巻", "total_found": "🔍 {0} 件発見", "search_ph": "検索...", "load_more": "🔽 もっと見る", "no_more": "✅ 全表示", "slider": "⏳ タイムライン", "cat_label": "📂 カテゴリ", "grid_label": "🖼️ 列数", "cats": ["すべて", "微博談", "微視野", "微历史"] },
         "🇰🇷 한국어": { "title": "🏮 제어판", "main_title": "⏳ 타임머신", "lang_label": "🌐 언어 변경", "stats_label": "📊 통계", "unit": "권", "total_found": "🔍 {0} 개 항목 발견", "search_ph": "검색...", "load_more": "🔽 더 보기", "no_more": "✅ 완료", "slider": "⏳ 시간", "cat_label": "📂 카테고리", "grid_label": "🖼️ 열", "cats": ["전체", "微博談", "微視野", "微历史"] },
         "🇩🇪 Deutsch": { "title": "🏮 Konsole", "main_title": "⏳ Zeitmaschine", "lang_label": "🌐 Sprache", "stats_label": "📊 Gesamt", "unit": "Bände", "total_found": "🔍 {0} Bilder gefunden", "search_ph": "Suchen...", "load_more": "🔽 Mehr", "no_more": "✅ Fertig", "slider": "⏳ Zeit", "cat_label": "📂 Kategorie", "grid_label": "🖼️ Spalten", "cats": ["Alle", "微博谈", "微视野", "微历史"] },
@@ -149,7 +149,7 @@
         const catGroup = document.getElementById('category-group');
         catGroup.innerHTML = "";
         L.cats.forEach((c, idx) => {
-            const realCat = (idx === 0) ? "全部" : ["微博谈", "微视野", "微历史"][idx-1];
+            const realCat = (idx === 0) ? "全部" : ["微博谈", "微历史", "微视野"][idx-1];
             const div = document.createElement('div');
             div.className = `radio-item ${state.category === realCat ? 'active' : ''}`;
             div.innerText = c;
