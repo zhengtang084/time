@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #0066cc;  /* 博谈网风格柔和蓝 */
+            --primary-color: #0066cc;  /* 浅色模式统一柔和蓝 */
             --main-bg: #f8f9fa;
             --card-bg: #ffffff;
             --text-main: #333333;
@@ -20,6 +20,7 @@
 
         @media (prefers-color-scheme: dark) {
             :root {
+                --primary-color: #4d88ff;  /* 深色模式下统一为滑动条拇指同款亮蓝 */
                 --main-bg: #1e1e1e;
                 --card-bg: #2d2d2d;
                 --text-main: #e0e0e0;
@@ -27,7 +28,7 @@
                 --border-color: #444444;
                 --input-bg: #333333;
                 --control-bg: #3a3a3a;
-                --thumb-color: #4d88ff;
+                --thumb-color: #4d88ff;   /* 与 primary-color 保持一致 */
             }
         }
 
@@ -50,8 +51,7 @@
         .label-text { font-size: 13px; color: #888; margin-bottom: 8px; display: block;}
         .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         
-        .sync-color { color: var(--primary-color); font-weight: bold; }
-        .range-sub-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--primary-color); margin-top: 4px; opacity: 0.9; }
+        .range-sub-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-main); margin-top: 4px; opacity: 0.8; }
         
         .stats-box { background: var(--control-bg); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 25px; border: 1px solid var(--border-color); }
         #total-count { font-size: 24px; font-weight: bold; color: var(--primary-color); display: block; margin-top: 5px; }
@@ -65,14 +65,14 @@
             background-repeat: no-repeat; background-position: right 10px center;
         }
 
-        /* 搜索框与按钮 */
+        /* 搜索框与按钮（使用统一蓝色） */
         .search-wrapper { display: flex; gap: 5px; }
         .search-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); box-sizing: border-box; outline: none; }
         .btn-search { background: var(--primary-color); color: white; border: none; border-radius: 8px; padding: 0 15px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
-        .btn-search:hover { background: #0052a3; }
+        .btn-search:hover { background: #3388ff; }  /* 深色模式下 hover 更协调 */
         .btn-search i { font-size: 18px; }
 
-        /* 分类筛选 */
+        /* 分类筛选（选中背景使用统一蓝色） */
         .radio-group { display: flex; flex-direction: column; gap: 8px; }
         .radio-item { cursor: pointer; padding: 10px; border-radius: 6px; background: var(--control-bg); font-size: 13px; color: var(--text-main); transition: 0.2s; border: 1px solid var(--border-color); }
         .radio-item.active { background: var(--primary-color); color: white; font-weight: bold; }
@@ -173,16 +173,16 @@
     </div>
     
     <div class="sidebar-item">
-        <div class="label-row"><span class="label-text sync-color" id="ui-slider-label">⏳ 时间轴</span><span id="date-display" class="sync-color">...</span></div>
+        <div class="label-row"><span class="label-text" id="ui-slider-label">⏳ 时间轴</span><span id="date-display">...</span></div>
         <input type="range" id="date-slider" style="width:100%">
         <div class="range-sub-info">
-            <span class="sync-color">2014-02-12</span>
-            <span id="latest-date-label" class="sync-color">...</span>
+            <span>2014-02-12</span>
+            <span id="latest-date-label">...</span>
         </div>
     </div>
 
     <div class="sidebar-item">
-        <div class="label-row"><span class="label-text sync-color" id="ui-grid-label">🖼️ 列数</span><span id="grid-display" class="sync-color">3</span></div>
+        <div class="label-row"><span class="label-text" id="ui-grid-label">🖼️ 列数</span><span id="grid-display">3</span></div>
         <input type="range" id="grid-slider" min="1" max="6" value="3" style="width:100%">
     </div>
 </div>
@@ -385,10 +385,6 @@
         updateLb();
     }
     function closeLb() { document.getElementById('lightbox').style.display = 'none'; document.body.style.overflow = 'auto'; }
-
-    function triggerSearch() { state.search = document.getElementById('search-input').value.trim(); refreshData(true); }
-    document.getElementById('btn-search-trigger').onclick = triggerSearch;
-    document.getElementById('search-input').onkeydown = (e) => { if(e.key === 'Enter') triggerSearch(); };
 
     function triggerSearch() { state.search = document.getElementById('search-input').value.trim(); refreshData(true); }
     document.getElementById('btn-search-trigger').onclick = triggerSearch;
