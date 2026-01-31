@@ -32,7 +32,21 @@
             }
         }
 
-        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background-color: var(--main-bg); color: var(--text-main); margin: 0; transition: all 0.3s ease; }
+        /* 防止水平滚动条 */
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: "Segoe UI", "Microsoft YaHei", sans-serif; 
+            background-color: var(--main-bg); 
+            color: var(--text-main); 
+            margin: 0; 
+            transition: all 0.3s ease; 
+            min-width: 0;
+        }
         
         #sidebar { 
             width: 300px; 
@@ -101,7 +115,13 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
-        #main-content { margin-left: 300px; padding: 40px; width: calc(100% - 300px); min-height: 100vh; }
+        #main-content { 
+            margin-left: 300px; 
+            padding: 40px; 
+            width: calc(100% - 300px); 
+            min-height: 100vh; 
+            box-sizing: border-box;
+        }
         .gallery { 
             column-count: var(--column-count, 3); 
             column-gap: 30px; 
@@ -118,6 +138,7 @@
             align-items: center;
             gap: 12px;
             margin-bottom: 16px;
+            min-width: 0;
         }
 
         .card { 
@@ -131,10 +152,11 @@
             display: flex; 
             flex-direction: column; 
             width: 100%; 
+            min-width: 0;
         }
         .card-img-container { background: #000; width: 100%; display: flex; justify-content: center; align-items: center; }
         .card img { max-width: 100%; height: auto; object-fit: contain; cursor: zoom-in; display: block; }
-        .card-info { padding: 15px; }
+        .card-info { padding: 15px; min-width: 0; }
         .item-date { font-size: 13px; color: var(--primary-color); font-weight: 500; }
         .item-title-link { color: var(--primary-color); text-decoration: none; font-size: 13px; cursor: pointer; font-weight: 600; text-align: right; flex: 1; margin-left: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -175,9 +197,26 @@
             padding: 0 40px;
         }
 
+        /* 响应式优化 */
         @media (max-width: 900px) {
-            #sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); }
-            #main-content { margin-left: 0; width: 100%; padding: 20px; }
+            #sidebar { 
+                width: 100%; 
+                height: auto; 
+                position: relative; 
+                border-right: none; 
+                border-bottom: 1px solid var(--border-color); 
+                padding-bottom: 10px;
+            }
+            #main-content { 
+                margin-left: 0; 
+                width: 100%; 
+                padding: 20px; 
+            }
+            .gallery { column-gap: 20px; }
+        }
+
+        @media (max-width: 600px) {
+            .gallery { column-gap: 15px; }
         }
     </style>
 </head>
@@ -279,7 +318,7 @@
         await fetchGlobalTotal();
         await fetchDateRange();
         updateLanguage();
-        updateGridColumns();
+        adjustColumnsOnResize();
         await refreshData(true);
     }
 
@@ -347,6 +386,22 @@
     function updateGridColumns() {
         document.documentElement.style.setProperty('--column-count', state.grid);
     }
+
+    function adjustColumnsOnResize() {
+        const availableWidth = window.innerWidth - (window.innerWidth > 900 ? 340 : 40); // 减去侧边栏和padding
+        const minCardWidth = 280; // 每张卡片最小宽度
+        let maxCols = Math.floor(availableWidth / minCardWidth);
+        maxCols = Math.max(1, Math.min(maxCols, 6));
+
+        if (state.grid > maxCols) {
+            state.grid = maxCols;
+            document.getElementById('grid-slider').value = state.grid;
+            document.getElementById('grid-display').innerText = `${state.grid} ${LANG_DICT[state.lang].col_unit}`;
+        }
+        updateGridColumns();
+    }
+
+    window.addEventListener('resize', adjustColumnsOnResize);
 
     async function refreshData(isNew = false) {
         if (isNew) { state.page = 0; state.allImages = []; state.lastDate = null; document.getElementById('gallery').innerHTML = ""; }
@@ -446,6 +501,7 @@
         state.grid = parseInt(e.target.value);
         document.getElementById('grid-display').innerText = `${state.grid} ${LANG_DICT[state.lang].col_unit}`;
         updateGridColumns();
+        adjustColumnsOnResize();
     };
     document.getElementById('load-more').onclick = () => { state.page++; refreshData(); };
 
