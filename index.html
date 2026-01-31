@@ -32,7 +32,7 @@
             }
         }
 
-        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background-color: var(--main-bg); color: var(--text-main); margin: 0; display: flex; transition: all 0.3s ease; }
+        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background-color: var(--main-bg); color: var(--text-main); margin: 0; transition: all 0.3s ease; }
         
         #sidebar { 
             width: 300px; 
@@ -109,7 +109,6 @@
         
         .date-group-header {
             break-inside: avoid-column;
-            grid-column: 1 / -1; 
             padding: 25px 0 10px 0;
             font-size: 20px;
             font-weight: bold;
@@ -150,6 +149,31 @@
         .lb-close { position: absolute; top: 30px; right: 30px; width: 45px; height: 45px; font-size: 28px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
         #load-more { display: block; margin: 60px auto; padding: 15px 40px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; max-width: 80%; line-height: 1.5; }
+
+        /* 版权声明样式 */
+        #copyright-notice {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 20px;
+        }
+        #copyright-notice a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        #copyright-notice a:hover {
+            text-decoration: underline;
+        }
+        #lb-copyright {
+            color: #ccc;
+            font-size: 13px;
+            margin-top: 20px;
+            text-align: center;
+            max-width: 800px;
+            padding: 0 40px;
+        }
 
         @media (max-width: 900px) {
             #sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); }
@@ -202,6 +226,12 @@
     <div id="search-info" style="margin-bottom: 25px; color: var(--text-muted); font-size: 14px;"></div>
     <div class="gallery" id="gallery"></div>
     <button id="load-more">加载更多...</button>
+
+    <!-- 页面底部版权声明 -->
+    <div id="copyright-notice">
+        <p>图片版权属于博谈网 <a href="https://botanwang.com/" target="_blank">https://botanwang.com/</a></p>
+        <p>所有影像仅供学术研究与非商业参考使用，未经许可禁止转载、商用或二次发布。</p>
+    </div>
 </div>
 
 <div id="lightbox">
@@ -212,6 +242,8 @@
     </div>
     <img id="lightbox-img" alt="">
     <div id="lb-caption" style="color:white; margin-top:25px; text-align:center; padding:0 40px; max-width: 800px; font-size:14px; line-height:1.6;"></div>
+    <!-- 灯箱内版权声明 -->
+    <div id="lb-copyright">图片版权属于博谈网 https://botanwang.com/</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -365,7 +397,7 @@
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
-                <div class="card-img-container"><img src="${item.image_url}" onclick="openLbByUrl('${item.image_url}')" loading="lazy" onerror="this.src='https://via.placeholder.com/320x240?text=Image+Error';"></div>
+                <div class="card-img-container"><img src="${item.image_url}" onclick="openLbByUrl('${item.image_url}')" loading="lazy" onerror="this.src='https://via.placeholder.com/320x240?text=加载失败';"></div>
                 <div class="card-info">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span class="item-date">📅 ${item.production_date}</span>
@@ -393,6 +425,7 @@
         const item = state.allImages[state.currentLbIdx];
         document.getElementById('lightbox-img').src = item.image_url;
         document.getElementById('lb-caption').innerText = item.description || '';
+        document.getElementById('lb-copyright').innerText = '图片版权属于博谈网 https://botanwang.com/';
     }
     function moveLb(dir) {
         state.currentLbIdx = (state.currentLbIdx + dir + state.allImages.length) % state.allImages.length;
