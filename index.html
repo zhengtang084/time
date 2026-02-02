@@ -543,6 +543,22 @@
     document.getElementById('load-more').onclick = () => { state.page++; refreshData(); };
 
     initUI();
+	    // === 新增：键盘左右方向键切换图片 + Esc 关闭 ===
+    document.addEventListener('keydown', (e) => {
+        const lightbox = document.getElementById('lightbox');
+        if (lightbox.style.display === 'flex') {  // 只有在全屏看图时才生效
+            e.preventDefault();  // 防止箭头键滚动页面
+
+            if (e.key === 'ArrowLeft') {
+                moveLb(-1);      // 左键：上一张
+            } else if (e.key === 'ArrowRight') {
+                moveLb(1);       // 右键：下一张
+            } else if (e.key === 'Escape') {
+                closeLb();       // Esc 键：关闭
+            }
+        }
+    });
+    // === 新增结束 ===
 </script>
 </body>
 </html>
