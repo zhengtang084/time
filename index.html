@@ -238,6 +238,36 @@
             .gallery { column-gap: 10px; }
             .stats-box { padding: 12px; }
         }
+		
+		/* 优化统计框内的三列布局 */
+.stats-grid {
+    margin-top: 15px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+    display: grid;
+    /* 自动平分三列 */
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 8px;
+}
+
+.stats-item {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 针对手机等小屏幕的优化：如果太窄了，文字会自动缩小一点防止错位 */
+@media (max-width: 480px) {
+    .stats-item .label-text {
+        font-size: 9px !important;
+        white-space: nowrap;
+    }
+    .stats-item div {
+        font-size: 11px !important;
+    }
+}
+		
     </style>
 </head>
 <body>
@@ -260,21 +290,26 @@
     <span id="total-count">...</span>
     <small id="ui-unit">卷</small>
     
-    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
-        <div style="text-align: center;">
-            <span class="label-text" id="ui-before-yesterday-label" style="font-size: 10px;">前日新增</span>
-            <div id="before-yesterday-count" style="font-weight: bold; color: var(--text-muted); font-size: 13px;">0</div>
+    <div class="stats-grid">
+
+        <div class="stats-item">
+            <span class="label-text" id="ui-today-label">今日新增</span>
+            <div id="today-count" style="font-weight: bold; color: var(--primary-color); font-size: 13px;">0</div>
         </div>
-        <div style="text-align: center;">
-            <span class="label-text" id="ui-yesterday-label" style="font-size: 10px;">昨日新增</span>
+	
+        <div class="stats-item">
+            <span class="label-text" id="ui-yesterday-label">昨日新增</span>
             <div id="yesterday-count" style="font-weight: bold; color: var(--text-main); font-size: 13px;">0</div>
         </div>
-        <div style="text-align: center;">
-            <span class="label-text" id="ui-month-label" style="font-size: 10px;">本月更新</span>
+		
+		
+        <div class="stats-item">
+            <span class="label-text" id="ui-month-label">本月更新</span>
             <div id="month-count" style="font-weight: bold; color: var(--primary-color); font-size: 13px;">0</div>
         </div>
     </div>
 </div>
+
         <div class="sidebar-item">
             <label class="label-text" id="ui-cat-label">📂 栏目筛选</label>
             <div class="radio-group" id="category-group"></div>
@@ -379,37 +414,44 @@ const LANG_DICT = {
     }
 
 async function fetchGlobalTotal() {
-    // 1. 获取全馆总数
-    const { count: totalCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true });
-    document.getElementById('total-count').innerText = totalCount ? totalCount.toLocaleString() : "0";
+    try {
+        // 1. 获取全馆总数
+        const { count: totalCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true });
+        document.getElementById('total-count').innerText = totalCount ? totalCount.toLocaleString() : "0";
 
-    // 2. 日期计算
-    const now = new Date();
-    
-    // 昨日 YYYY-MM-DD
-    const yesterday = new Date(); yesterday.setDate(now.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
-    // 前日 YYYY-MM-DD
-    const beforeYesterday = new Date(); beforeYesterday.setDate(now.getDate() - 2);
-    const beforeYesterdayStr = beforeYesterday.toISOString().split('T')[0];
-    
-    // 本月第一天 YYYY-MM-01
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        // --- 修正后的日期计算逻辑 ---
+        const now = new Date();
+        const formatDate = (d) => d.toISOString().split('T')[0];
 
-    // 3. 并行执行 Supabase 查询 (提高加载速度)
-    const [yRes, byRes, mRes] = await Promise.all([
-        mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', yesterdayStr),
-        mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', beforeYesterdayStr),
-        mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).gte('production_date', firstDayOfMonth)
-    ]);
+        // 今日
+        const todayStr = formatDate(now);
+        
+        // 昨日
+        const yesterday = new Date();
+        yesterday.setDate(now.getDate() - 1);
+        const yesterdayStr = formatDate(yesterday);
+        
+        // 本月第一天 (确保 YYYY-MM-01 格式)
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const firstDayOfMonth = `${year}-${month}-01`;
 
-    // 4. 更新 UI
-    document.getElementById('yesterday-count').innerText = yRes.count || 0;
-    document.getElementById('before-yesterday-count').innerText = byRes.count || 0;
-    document.getElementById('month-count').innerText = mRes.count || 0;
+        // 并行查询
+        const [todayRes, yesterdayRes, monthRes] = await Promise.all([
+            mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', todayStr),
+            mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', yesterdayStr),
+            mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).gte('production_date', firstDayOfMonth)
+        ]);
+
+        // 更新 UI
+        document.getElementById('today-count').innerText = todayRes.count || 0;
+        document.getElementById('yesterday-count').innerText = yesterdayRes.count || 0;
+        document.getElementById('month-count').innerText = monthRes.count || 0;
+
+    } catch (err) {
+        console.error("统计数据加载失败:", err);
+    }
 }
-
 
     async function fetchDateRange() {
         const { data: maxData } = await mySupabase.from('botan_final').select('production_date').order('production_date', { ascending: false }).limit(1);
