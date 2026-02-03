@@ -165,56 +165,22 @@
             column-gap: 30px; 
         }
         
-/* 【原有代码：大约在 167 行，确保 .date-group-header 基础属性如下】 */
-.date-group-header {
-    column-span: all;
-    break-inside: avoid;
-    padding: 15px 20px;
-    margin: 30px 0 20px;
-    font-size: 20px;
-    font-weight: bold;
-    color: var(--primary-color);
-    border-bottom: 2px solid var(--primary-color);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-    
-/* --- 核心修复：强制执行浮动 --- */
-    position: -webkit-sticky !important; 
-    position: sticky !important;         
-    top: 0 !important;                   
-    z-index: 1000 !important;            
-    background: var(--bg-color) !important;
-
-}
-
-/* ================================================= */
-/* 【统一管理：移动端响应式布局区域】 */
-
-/* 第一层：适配平板及手机 (900px以下) */
-@media (max-width: 900px) {
-    .date-group-header {
-        top: 60px;          /* 移动端向下偏移，避开菜单按钮 */
-        font-size: 16px;
-        padding: 10px 15px;
-        background: var(--control-bg);
-    }
-    
-    /* 你可以在这里放其他 900px 以下需要的修改 */
-}
-
-/* 第二层：专门适配窄屏手机 (500px以下) */
-@media (max-width: 500px) {
-    /* 【原有代码】 */
-    .gallery { column-gap: 10px; }
-    .stats-box { padding: 12px; }
-    
-    /* 如果你觉得手机上 60px 还是太高，甚至可以在这里微调 */
-    .date-group-header {
-        top: 55px; 
-    }
-}
+        .date-group-header {
+            column-span: all;
+            break-inside: avoid;
+            padding: 15px 20px;
+            margin: 30px 0 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-color); 
+            border-bottom: 2px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            background: var(--control-bg);
+            border-radius: 8px;
+        }
 
         .card { 
             break-inside: avoid-column;
@@ -257,6 +223,16 @@
         }
         #copyright-notice a { color: var(--primary-color); text-decoration: none; }
         #copyright-notice a:hover { text-decoration: underline; }
+		.search-highlight {          // [新增]
+         background-color: #ffeb3b; // [新增] 背景变黄
+         color: #000;              // [新增] 文字转黑，确保对比度
+         padding: 0 2px;           // [新增] 稍微增加内边距
+         border-radius: 2px;       // [新增] 圆角
+         font-weight: bold;        // [新增] 加粗
+        } 
+		
+		
+		
         #lb-copyright { color: #ccc; font-size: 13px; margin-top: 20px; text-align: center; padding: 0 40px; }
 
         @media (max-width: 900px) {
@@ -268,6 +244,10 @@
             #sidebar { width: 100%; padding: 70px 15px 20px; }
         }
 
+        @media (max-width: 500px) {
+            .gallery { column-gap: 10px; }
+            .stats-box { padding: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -578,6 +558,20 @@ async function fetchGlobalTotal() {
         const container = document.getElementById('gallery');
         
         data.forEach((item) => {
+		
+// [新增]     // 关键词高亮处理逻辑
+            let displayDescription = item.description || '';
+            if (state.search && state.search.trim() !== "") {
+            try {
+                    const escapedSearch = state.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // 转义正则特殊字符
+                  const regex = new RegExp(`(${escapedSearch})`, 'gi');
+                 displayDescription = displayDescription.replace(regex, '<mark class="search-highlight">$1</mark>');
+              } catch (e) { console.error("Highlight error:", e); }
+              }
+		
+		
+		
+		
             if (item.production_date !== state.lastDate) {
                 const header = document.createElement('div');
                 header.className = 'date-group-header';
@@ -595,7 +589,7 @@ async function fetchGlobalTotal() {
                         <span class="item-date">📅 ${item.production_date}</span>
                         <a class="item-title-link" onclick="toggleInfo(this)">${item.title || '博谈档案'}</a>
                     </div>
-                    <div class="description-panel">${item.description || ''}</div>
+                    <div class="description-panel">${displayDescription}</div> 
                 </div>
             `;
             container.appendChild(card);
@@ -617,7 +611,21 @@ async function fetchGlobalTotal() {
     function updateLb() {
         const item = state.allImages[state.currentLbIdx];
         document.getElementById('lightbox-img').src = item.image_url;
-        document.getElementById('lb-caption').innerText = item.description || '';
+		
+// [新增]     // 灯箱内文本高亮处理
+		let lbDescription = item.description || '';
+				if (state.search && state.search.trim() !== "") {
+				const escapedSearch = state.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+				const regex = new RegExp(`(${escapedSearch})`, 'gi');
+				lbDescription = lbDescription.replace(regex, '<mark class="search-highlight">$1</mark>');
+			 }
+
+// // [新增]   
+        document.getElementById('lb-caption').innerHTML = lbDescription; // 注意：改为 innerHTML 以解析高亮标签
+		
+		
+// [删除]            document.getElementById('lb-caption').innerText = item.description || '';
+		
         document.getElementById('lb-copyright').innerText = '图片版权属于博谈网 https://botanwang.com/';
         
         const downloadBtn = document.getElementById('lb-download');
