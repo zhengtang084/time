@@ -341,6 +341,26 @@
     <div id="lb-copyright">图片版权属于博谈网 https://botanwang.com/</div>
 </div>
 
+ <!-- 回到顶部按钮 -->
+<button id="back-to-top" title="回到顶部" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 999; background: var(--primary-color); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<style>
+    /* 移动端适配：屏幕窄时缩小按钮 */
+    @media (max-width: 768px) {
+        #back-to-top {
+            width: 40px !important;
+            height: 40px !important;
+            bottom: 15px !important;
+            right: 15px !important;
+            opacity: 0.8;
+        }
+    }
+    #back-to-top:hover { transform: translateY(-5px); }
+</style>
+
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     function toggleSidebar() {
@@ -653,6 +673,33 @@ function updateProgressInfo() {
     function updateLoadMoreButton() {
         updateProgressInfo();
     }
+	
+// ==========================================
+// 【新增代码：回到顶部控制逻辑】
+// 获取刚才在 HTML 里定义的按钮
+const topBtn = document.getElementById("back-to-top");
+
+// 监听网页滚动
+window.addEventListener('scroll', () => {
+    // 当滚动高度超过 500 像素时显示按钮，否则隐藏
+    if (window.scrollY > 500) {
+        topBtn.style.display = "flex";
+    } else {
+        topBtn.style.display = "none";
+    }
+});
+
+// 点击按钮时的动作
+topBtn.onclick = function() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth' // 启用平滑滚动效果
+    });
+};
+// 【新增代码结束】
+// ==========================================
+
+	
 </script>
 </body>
 </html>
