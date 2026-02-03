@@ -180,13 +180,12 @@
     gap: 12px;
     min-width: 0;
     
-    /* === 新增：粘性定位基础代码 === */
-    position: -webkit-sticky;
-    position: sticky;
-    top: 0;                /* PC端贴顶 */
-    z-index: 100;
-    background: var(--bg-color); 
-	box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 增加一点阴影，让置顶效果更有层次感 */
+/* --- 核心修复：强制执行浮动 --- */
+    position: -webkit-sticky !important; 
+    position: sticky !important;         
+    top: 0 !important;                   
+    z-index: 1000 !important;            
+    background: var(--bg-color) !important;
 
 }
 
