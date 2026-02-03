@@ -180,6 +180,13 @@
             min-width: 0;
             background: var(--control-bg);
             border-radius: 8px;
+    /* === 新增代码：实现粘性置顶的关键 === */
+            position: -webkit-sticky; /* 兼容 Safari */
+            position: sticky;         /* 粘性布局 */
+            top: 0;                   /* 距离顶部 0 像素时固定 */
+            z-index: 10;              /* 确保层级高于图片卡片，防止被遮挡 */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 增加一点阴影，让置顶效果更有层次感 */
+
         }
 
         .card { 
