@@ -4,19 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- === SEO 优化（提升搜索引擎收录与社交分享效果）=== -->
+    <!-- SEO 优化 + 社交分享卡片 -->
     <title>博谈影像档案库 ChinaTime - 历史影像时间机器</title>
     <meta name="description" content="博谈网历史影像档案库，收录2014年以来微博谈、微历史、微视野等栏目经典图片，支持时间轴、文字搜索、多语言浏览，非商业学术研究专用。">
-    <meta name="keywords" content="博谈网,历史影像,微博谈,微历史,微视野,中国档案,互联网历史,图片库,博谈影像档案库,互联网历史影像库">
-   
-    <!-- Open Graph（微信、Twitter、Facebook 等分享时显示漂亮卡片） -->
+    <meta name="keywords" content="博谈网,历史影像,微博谈,微历史,微视野,中国档案,互联网图片库,博谈影像档案库">
+    
     <meta property="og:title" content="博谈影像档案库 ChinaTime - 历史影像时间机器">
     <meta property="og:description" content="海量博谈网历史影像，支持时间轴筛选、关键词搜索、多语言切换。">
-    <meta property="og:image" content="https://yourdomain.com/preview.jpg"> <!-- 请替换为你的预览图链接 -->
+    <meta property="og:image" content="https://yourdomain.com/preview.jpg">
     <meta property="og:url" content="https://yourdomain.com/">
     <meta property="og:type" content="website">
     
-    <!-- 强制 HTTPS（提升安全） -->
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -329,8 +327,15 @@
 
     const LANG_DICT = {
         "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换/Language", "stats_label": "📊 全馆影像总计", "unit": "卷", "search_placeholder": "搜索档案内容关键词", "search_info": "🔍 在 {1} 之前检索到 {0} 卷影像", "search_label": "搜索档案内容", "cat_label": "📂 栏目筛选", "slider_label": "⏳ 时间轴", "grid_label": "🖼️ 列数", "col_unit": "列", "load_more": "已加载 {0} 张 / 共 {1} 张", "no_more": "✅ 已加载全部 {0} 张", "cats": ["全部", "微博谈", "微历史", "微视野"] },
-        // ...（这里省略其他语言，保持原样，你原来的代码里有完整字典，请补上或直接用之前的）
-        // 为节省空间，我只写了一个，其余请从你旧版本复制完整
+        "🇭🇰 繁體中文": { "title": "🏮 影像館控制台", "main_title": "⏳ 歷史影像時間機器", "lang_label": "🌐 語言切換/Language", "stats_label": "📊 全館影像總計", "unit": "卷", "search_placeholder": "搜尋檔案內容關鍵詞", "search_info": "🔍 在 {1} 之前檢索到 {0} 卷影像", "search_label": "搜尋檔案內容", "cat_label": "📂 欄目篩選", "slider_label": "⏳ 時間軸", "grid_label": "🖼️ 列數", "col_unit": "列", "load_more": "已加載 {0} 張 / 共 {1} 張", "no_more": "✅ 已加載全部 {0} 張", "cats": ["全部", "微博談", "微歷史", "微視野"] },
+        "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ History Time Machine", "lang_label": "🌐 Language/語言切換", "stats_label": "📊 Total Archives", "unit": "Items", "search_placeholder": "Search archive keywords", "search_info": "🔍 Found {0} items before {1}", "search_label": "Search Content", "cat_label": "📂 Categories", "slider_label": "⏳ Timeline", "grid_label": "🖼️ Grid Columns", "col_unit": "Cols", "load_more": "Loaded {0} / Total {1}", "no_more": "✅ All {0} loaded", "cats": ["All", "Weibo", "History", "Vision"] },
+        "🇯🇵 日本語": { "title": "🏮 コントロール", "main_title": "⏳ 歴史映像マシン", "lang_label": "🌐 言語切替/Language", "stats_label": "📊 総数", "unit": "巻", "search_placeholder": "アーカイブ検索", "search_info": "🔍 {1} までに {0} 件見つかりました", "search_label": "アーカイブ検索", "cat_label": "📂 項目フィルター", "slider_label": "⏳ タイムライン", "grid_label": "🖼️ 表示列数", "col_unit": "列", "load_more": "読み込み {0} / 合計 {1}", "no_more": "✅ 全 {0} 件読み込み完了", "cats": ["すべて", "微博談", "微歴史", "微視野"] },
+        "🇰🇷 한국어": { "title": "🏮 제어판", "main_title": "⏳ 역사 타임머신", "lang_label": "🌐 언어 변경/語言切換", "stats_label": "📊 아카이브 합계", "unit": "권", "search_placeholder": "아카이브 검색", "search_info": "🔍 {1} 이전에 {0}개 발견", "search_label": "아카이브 검색", "cat_label": "📂 카테고리 필터", "slider_label": "⏳ 시간축", "grid_label": "🖼️ 열 개수", "col_unit": "열", "load_more": "로드 {0} / 총 {1}", "no_more": "✅ 모든 {0}개 로드 완료", "cats": ["전체", "微博談", "微歷史", "微視野"] },
+        "🇩🇪 Deutsch": { "title": "🏮 Konsole", "main_title": "⏳ Zeitmaschine", "lang_label": "🌐 Sprache/語言切換", "stats_label": "📊 Archiv Gesamt", "unit": "Bilder", "search_placeholder": "Archiv durchsuchen", "search_info": "🔍 {0} Bilder vor {1} gefunden", "search_label": "Suche", "cat_label": "📂 Kategorien", "slider_label": "⏳ Zeitachse", "grid_label": "🖼️ Spalten", "col_unit": "Sp.", "load_more": "{0} geladen / {1} gesamt", "no_more": "✅ Alle {0} geladen", "cats": ["Alle", "Diskussion", "Geschichte", "Vision"] },
+        "🇫🇷 Français": { "title": "🏮 Console", "main_title": "⏳ Machine du temps", "lang_label": "🌐 Langue/語言切換", "stats_label": "📊 Total des archives", "unit": "Images", "search_placeholder": "Rechercher dans les archives", "search_info": "🔍 {0} images trouvées avant {1}", "search_label": "Rechercher", "cat_label": "📂 Catégories", "slider_label": "⏳ Axe temporel", "grid_label": "🖼️ Colonnes", "col_unit": "Cols", "load_more": "{0} chargés / {1} total", "no_more": "✅ {0} images chargées", "cats": ["Tout", "Débats", "Histoire", "Vision"] },
+        "🇮🇷 فارسی": { "title": "🏮 کنسول", "main_title": "⏳ ماشین زمان", "lang_label": "🌐 زبان/語言切換", "stats_label": "📊 کل بایگانی", "unit": "مورد", "search_placeholder": "جستجو در آرشیو", "search_info": "🔍 {0} تصویر قبل از {1} پیدا شد", "search_label": "جستجوی آرشیو", "cat_label": "📂 دسته‌ها", "slider_label": "⏳ خط زمانی", "grid_label": "🖼️ ستون‌ها", "col_unit": "ستون", "load_more": "{0} بارگذاری شده / {1} کل", "no_more": "✅ تمام {0} مورد", "cats": ["همه", "گفتگو", "تاریخ", "چشم انداز"] },
+        "🇹🇭 ไทย": { "title": "🏮 แผงควบคุม", "main_title": "⏳ เครื่องย้อนเวลา", "lang_label": "🌐 เปลี่ยนภาษา/語言切換", "stats_label": "📊 คลังทั้งหมด", "unit": "รายการ", "search_placeholder": "ค้นหาในคลัง", "search_info": "🔍 พบ {0} รายการก่อน {1}", "search_label": "ค้นหา", "cat_label": "📂 กรองหมวดหมู่", "slider_label": "⏳ แกนเวลา", "grid_label": "🖼️ คอลัมน์", "col_unit": "คอลัมน์", "load_more": "โหลด {0} / ทั้งหมด {1}", "no_more": "✅ โหลดครบ {0} รายการ", "cats": ["ทั้งหมด", "พูดคุย", "ประวัติศาสตร์", "วิสัยทัศน์"] },
+        "🇻🇳 Tiếng Việt": { "title": "🏮 Bảng điều khiển", "main_title": "⏳ Cỗ máy thời gian", "lang_label": "🌐 Ngôn ngữ/語言切換", "stats_label": "📊 Tổng kho ảnh", "unit": "Mục", "search_placeholder": "Tìm kiếm nội dung", "search_info": "🔍 Tìm thấy {0} mục trước {1}", "search_label": "Tìm kiếm", "cat_label": "📂 Phân loại", "slider_label": "⏳ Trục thời gian", "grid_label": "🖼️ Số cột", "col_unit": "Cột", "load_more": "Đã tải {0} / Tổng {1}", "no_more": "✅ Đã tải xong {0} mục", "cats": ["Tất cả", "Thảo luận", "Lịch sử", "Tầm nhìn"] }
     };
 
     const SB_URL = "https://ztsdhjjnydrnsxgsheyb.supabase.co";
@@ -339,17 +344,250 @@
 
     let state = { lang: "🇨🇳 简体中文", category: "全部", search: "", dateLimit: null, grid: 3, page: 0, pageSize: 50, allImages: [], currentLbIdx: 0, lastDate: null, totalSearchCount: 0, loading: false };
 
-    // === 所有核心函数恢复（这些是必须的）===
-    // （这里粘贴你旧版本的所有函数：initUI, fetchGlobalTotal, fetchDateRange, changeLang, updateLanguage, updateGridColumns, adjustColumnsOnResize, refreshData, updateLoadMoreButton, renderCards, toggleInfo, openLbByUrl, updateLb, moveLb, closeLb, triggerSearch 等）
+    async function initUI() {
+        const langSelect = document.getElementById('lang-select');
+        Object.keys(LANG_DICT).forEach(l => {
+            const opt = document.createElement('option');
+            opt.value = opt.innerText = l;
+            langSelect.appendChild(opt);
+        });
+        langSelect.value = state.lang;
 
-    // 注意：由于篇幅，我无法全部贴出，但你只要把旧版本的完整 JS 函数部分复制进来即可
+        await fetchGlobalTotal();
+        await fetchDateRange();
+        updateLanguage();
+        adjustColumnsOnResize();
+        await refreshData(true);
+    }
+
+    async function fetchGlobalTotal() {
+        const { count } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true });
+        document.getElementById('total-count').innerText = count ? count.toLocaleString() : "0";
+    }
+
+    async function fetchDateRange() {
+        const { data: maxData } = await mySupabase.from('botan_final').select('production_date').order('production_date', { ascending: false }).limit(1);
+        const { data: minData } = await mySupabase.from('botan_final').select('production_date').order('production_date', { ascending: true }).limit(1);
+
+        let latest = new Date().toISOString().split('T')[0];
+        let earliest = "2014-02-12";
+
+        if (maxData && maxData[0]) latest = maxData[0].production_date;
+        if (minData && minData[0]) earliest = minData[0].production_date;
+
+        document.getElementById('latest-date-label').innerText = latest;
+        document.querySelector('.range-sub-info span:first-child').innerText = earliest;
+
+        const latestTime = new Date(latest).getTime();
+        const earliestTime = new Date(earliest).getTime();
+
+        const slider = document.getElementById('date-slider');
+        slider.min = earliestTime;
+        slider.max = latestTime;
+        slider.value = latestTime;
+
+        state.dateLimit = latest;
+        document.getElementById('date-display').innerText = latest;
+    }
+
+    function changeLang(val) { state.lang = val; updateLanguage(); refreshData(true); }
+
+    function updateLanguage() {
+        const L = LANG_DICT[state.lang];
+        document.getElementById('ui-title').innerText = L.title;
+        document.getElementById('ui-main-title').innerText = L.main_title;
+        document.getElementById('ui-lang-label').innerText = L.lang_label;
+        document.getElementById('ui-stats-label').innerText = L.stats_label;
+        document.getElementById('ui-unit').innerText = L.unit;
+        document.getElementById('ui-cat-label').innerText = L.cat_label;
+        document.getElementById('ui-search-label').innerText = L.search_label;
+        document.getElementById('search-input').placeholder = L.search_placeholder;
+        document.getElementById('ui-slider-label').innerText = L.slider_label;
+        document.getElementById('ui-grid-label').innerText = L.grid_label;
+        document.getElementById('grid-display').innerText = `${state.grid} ${L.col_unit}`;
+
+        const catGroup = document.getElementById('category-group');
+        catGroup.innerHTML = "";
+        const dbCatsMap = ["全部", "微博谈", "微历史", "微视野"];
+        L.cats.forEach((c, idx) => {
+            const realCat = dbCatsMap[idx];
+            const div = document.createElement('div');
+            div.className = `radio-item ${state.category === realCat ? 'active' : ''}`;
+            div.innerText = c;
+            div.onclick = () => { state.category = realCat; updateLanguage(); refreshData(true); };
+            catGroup.appendChild(div);
+        });
+
+        updateLoadMoreButton();
+    }
+
+    function updateGridColumns() {
+        document.documentElement.style.setProperty('--column-count', state.grid);
+    }
+
+    function adjustColumnsOnResize() {
+        const width = window.innerWidth;
+        let maxCols = width < 600 ? 1 : width < 900 ? 2 : width < 1200 ? 3 : width < 1600 ? 4 : 5;
+        maxCols = Math.min(maxCols, 6);
+
+        if (state.grid > maxCols) {
+            state.grid = maxCols;
+            document.getElementById('grid-slider').value = state.grid;
+            document.getElementById('grid-display').innerText = `${state.grid} ${LANG_DICT[state.lang].col_unit}`;
+        }
+        updateGridColumns();
+    }
+
+    window.addEventListener('resize', adjustColumnsOnResize);
+
+    async function refreshData(isNew = false) {
+        if (isNew) { state.page = 0; state.allImages = []; state.lastDate = null; document.getElementById('gallery').innerHTML = ""; }
+        const L = LANG_DICT[state.lang];
+
+        let query = mySupabase.from('botan_final').select('*', { count: 'exact' });
+        query = query.lte('production_date', state.dateLimit);
+        if (state.search) query = query.ilike('description', `%${state.search}%`);
+        if (state.category !== "全部") query = query.eq('category', state.category);
+        query = query.order('production_date', { ascending: false }).range(state.page * state.pageSize, (state.page + 1) * state.pageSize - 1);
+
+        const { data, count, error } = await query;
+        if (error || !data) {
+            console.error("Supabase error:", error);
+            return;
+        }
+
+        state.totalSearchCount = count || 0;
+        document.getElementById('search-info').innerText = L.search_info.replace('{0}', state.totalSearchCount.toLocaleString()).replace('{1}', state.dateLimit);
+        state.allImages = state.allImages.concat(data);
+        renderCards(data);
+        updateLoadMoreButton();
+    }
+
+    function renderCards(data) {
+        const container = document.getElementById('gallery');
+        
+        data.forEach((item) => {
+            if (item.production_date !== state.lastDate) {
+                const header = document.createElement('div');
+                header.className = 'date-group-header';
+                header.innerHTML = `<i class="fas fa-calendar-alt"></i> ${item.production_date}`;
+                container.appendChild(header);
+                state.lastDate = item.production_date;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-img-container"><img src="${item.image_url}" onclick="openLbByUrl('${item.image_url}')" loading="lazy" onerror="this.src='https://via.placeholder.com/320x240?text=加载失败';"></div>
+                <div class="card-info">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="item-date">📅 ${item.production_date}</span>
+                        <a class="item-title-link" onclick="toggleInfo(this)">${item.title || '博谈档案'}</a>
+                    </div>
+                    <div class="description-panel">${item.description || ''}</div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function toggleInfo(btn) { 
+        const panel = btn.parentElement.nextElementSibling;
+        panel.classList.toggle('open'); 
+    }
+
+    function openLbByUrl(url) {
+        state.currentLbIdx = state.allImages.findIndex(i => i.image_url === url);
+        updateLb();
+        document.getElementById('lightbox').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function updateLb() {
+        const item = state.allImages[state.currentLbIdx];
+        document.getElementById('lightbox-img').src = item.image_url;
+        document.getElementById('lb-caption').innerText = item.description || '';
+        document.getElementById('lb-copyright').innerText = '图片版权属于博谈网 https://botanwang.com/';
+        
+        const downloadBtn = document.getElementById('lb-download');
+        downloadBtn.href = item.image_url;
+        downloadBtn.download = `botan_${item.production_date || 'unknown'}.jpg`;
+        
+        document.getElementById('lb-counter').innerText = `${state.currentLbIdx + 1} / ${state.allImages.length}`;
+    }
+
+    function moveLb(dir) {
+        state.currentLbIdx = (state.currentLbIdx + dir + state.allImages.length) % state.allImages.length;
+        updateLb();
+    }
+
+    function closeLb() { 
+        document.getElementById('lightbox').style.display = 'none'; 
+        document.body.style.overflow = 'auto'; 
+    }
+
+    function triggerSearch() { 
+        state.search = document.getElementById('search-input').value.trim(); 
+        refreshData(true); 
+    }
+    document.getElementById('btn-search-trigger').onclick = triggerSearch;
+    document.getElementById('search-input').onkeydown = (e) => { if(e.key === 'Enter') triggerSearch(); };
+
+    document.getElementById('date-slider').oninput = (e) => {
+        state.dateLimit = new Date(parseInt(e.target.value)).toISOString().split('T')[0];
+        document.getElementById('date-display').innerText = state.dateLimit;
+        clearTimeout(window.dt); window.dt = setTimeout(() => refreshData(true), 300);
+    };
+
+    document.getElementById('grid-slider').oninput = (e) => {
+        state.grid = parseInt(e.target.value);
+        document.getElementById('grid-display').innerText = `${state.grid} ${LANG_DICT[state.lang].col_unit}`;
+        adjustColumnsOnResize();
+    };
 
     initUI();
 
-    // === 保留并优化的新功能 ===
-    // 键盘翻页、无限滚动、进度提示修复、Lightbox 下载+序号（代码同上一次完整版）
+    // 键盘翻页
+    document.addEventListener('keydown', (e) => {
+        const lightbox = document.getElementById('lightbox');
+        if (lightbox.style.display === 'flex') {
+            e.preventDefault();
+            if (e.key === 'ArrowLeft') moveLb(-1);
+            else if (e.key === 'ArrowRight') moveLb(1);
+            else if (e.key === 'Escape') closeLb();
+        }
+    });
 
-    // 如果还有问题，打开浏览器控制台（F12）看错误信息告诉我，我再帮你细调！
+    // 无限滚动
+    window.addEventListener('scroll', () => {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
+            if (state.allImages.length < state.totalSearchCount && !state.loading) {
+                state.loading = true;
+                state.page++;
+                refreshData().then(() => state.loading = false);
+            }
+        }
+    });
+    document.getElementById('load-more').style.display = 'none';
+
+    // 加载进度提示
+    const progressInfo = document.createElement('div');
+    progressInfo.id = 'load-progress';
+    progressInfo.style.cssText = 'text-align:center; margin:20px 0; font-size:14px; color:var(--text-muted);';
+    document.getElementById('search-info').after(progressInfo);
+
+    function updateProgressInfo() {
+        const L = LANG_DICT[state.lang];
+        if (state.allImages.length >= state.totalSearchCount) {
+            progressInfo.innerText = L.no_more.replace('{0}', state.allImages.length.toLocaleString());
+        } else {
+            progressInfo.innerText = L.load_more.replace('{0}', state.allImages.length.toLocaleString()).replace('{1}', state.totalSearchCount.toLocaleString());
+        }
+    }
+
+    function updateLoadMoreButton() {
+        updateProgressInfo();
+    }
 </script>
 </body>
 </html>
