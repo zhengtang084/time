@@ -279,6 +279,13 @@
     </div>
 </div>
 
+    <!-- 图片加载提示 -->
+        <div class="sidebar-item" style="margin-bottom: 20px;">
+            <div id="sidebar-progress" style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 10px; background: var(--control-bg); border-radius: 8px; border: 1px dashed var(--border-color);">
+                </div>
+        </div>
+
+
         <div class="sidebar-item">
             <label class="label-text" id="ui-cat-label">📂 栏目筛选</label>
             <div class="radio-group" id="category-group"></div>
@@ -625,19 +632,23 @@ async function fetchGlobalTotal() {
     document.getElementById('load-more').style.display = 'none';
 
     // 加载进度提示
-    const progressInfo = document.createElement('div');
-    progressInfo.id = 'load-progress';
-    progressInfo.style.cssText = 'text-align:center; margin:20px 0; font-size:14px; color:var(--text-muted);';
-    document.getElementById('search-info').after(progressInfo);
+    //const progressInfo = document.createElement('div');
+    //progressInfo.id = 'load-progress';
+    //progressInfo.style.cssText = 'text-align:center; margin:20px 0; font-size:14px; color:var(--text-muted);';
+    //document.getElementById('search-info').after(progressInfo);
 
-    function updateProgressInfo() {
-        const L = LANG_DICT[state.lang];
-        if (state.allImages.length >= state.totalSearchCount) {
-            progressInfo.innerText = L.no_more.replace('{0}', state.allImages.length.toLocaleString());
-        } else {
-            progressInfo.innerText = L.load_more.replace('{0}', state.allImages.length.toLocaleString()).replace('{1}', state.totalSearchCount.toLocaleString());
-        }
+// 图片加载左移 updateProgressInfo 函数：
+function updateProgressInfo() {
+    const L = LANG_DICT[state.lang];
+    const progressEl = document.getElementById('sidebar-progress'); // 改为获取侧边栏的容器
+    if (!progressEl) return;
+
+    if (state.allImages.length >= state.totalSearchCount) {
+        progressEl.innerText = L.no_more.replace('{0}', state.allImages.length.toLocaleString());
+    } else {
+        progressEl.innerText = L.load_more.replace('{0}', state.allImages.length.toLocaleString()).replace('{1}', state.totalSearchCount.toLocaleString());
     }
+}
 
     function updateLoadMoreButton() {
         updateProgressInfo();
