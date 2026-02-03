@@ -165,29 +165,57 @@
             column-gap: 30px; 
         }
         
-        .date-group-header {
-            column-span: all;
-            break-inside: avoid;
-            padding: 15px 20px;
-            margin: 30px 0 20px;
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--primary-color); 
-            border-bottom: 2px solid var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-            background: var(--control-bg);
-            border-radius: 8px;
-    /* === 新增代码：实现粘性置顶的关键 === */
-            position: -webkit-sticky; /* 兼容 Safari */
-            position: sticky;         /* 粘性布局 */
-            top: 0;                   /* 距离顶部 0 像素时固定 */
-            z-index: 10;              /* 确保层级高于图片卡片，防止被遮挡 */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 增加一点阴影，让置顶效果更有层次感 */
+/* 【原有代码：大约在 167 行，确保 .date-group-header 基础属性如下】 */
+.date-group-header {
+    column-span: all;
+    break-inside: avoid;
+    padding: 15px 20px;
+    margin: 30px 0 20px;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    
+    /* === 新增：粘性定位基础代码 === */
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;                /* PC端贴顶 */
+    z-index: 100;
+    background: var(--bg-color); 
+	box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 增加一点阴影，让置顶效果更有层次感 */
 
-        }
+}
+
+/* ================================================= */
+/* 【统一管理：移动端响应式布局区域】 */
+
+/* 第一层：适配平板及手机 (900px以下) */
+@media (max-width: 900px) {
+    .date-group-header {
+        top: 60px;          /* 移动端向下偏移，避开菜单按钮 */
+        font-size: 16px;
+        padding: 10px 15px;
+        background: var(--control-bg);
+    }
+    
+    /* 你可以在这里放其他 900px 以下需要的修改 */
+}
+
+/* 第二层：专门适配窄屏手机 (500px以下) */
+@media (max-width: 500px) {
+    /* 【原有代码】 */
+    .gallery { column-gap: 10px; }
+    .stats-box { padding: 12px; }
+    
+    /* 如果你觉得手机上 60px 还是太高，甚至可以在这里微调 */
+    .date-group-header {
+        top: 55px; 
+    }
+}
 
         .card { 
             break-inside: avoid-column;
@@ -241,10 +269,6 @@
             #sidebar { width: 100%; padding: 70px 15px 20px; }
         }
 
-        @media (max-width: 500px) {
-            .gallery { column-gap: 10px; }
-            .stats-box { padding: 12px; }
-        }
     </style>
 </head>
 <body>
