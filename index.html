@@ -238,36 +238,6 @@
             .gallery { column-gap: 10px; }
             .stats-box { padding: 12px; }
         }
-		
-		/* 优化统计框内的三列布局 */
-.stats-grid {
-    margin-top: 15px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--border-color);
-    display: grid;
-    /* 自动平分三列 */
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 8px;
-}
-
-.stats-item {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-/* 针对手机等小屏幕的优化：如果太窄了，文字会自动缩小一点防止错位 */
-@media (max-width: 480px) {
-    .stats-item .label-text {
-        font-size: 9px !important;
-        white-space: nowrap;
-    }
-    .stats-item div {
-        font-size: 11px !important;
-    }
-}
-		
     </style>
 </head>
 <body>
@@ -283,29 +253,28 @@
             <label class="label-text" id="ui-lang-label">🌐 语言切换/Language</label>
             <select id="lang-select" onchange="changeLang(this.value)"></select>
         </div>
-
-    <!-- 每日每月新增 -->		
+		
 <div class="stats-box">
     <span class="label-text" id="ui-stats-label">📊 全馆影像总计</span>
     <span id="total-count">...</span>
     <small id="ui-unit">卷</small>
-    
-    <div class="stats-grid">
 
-        <div class="stats-item">
-            <span class="label-text" id="ui-today-label">今日新增</span>
-            <div id="today-count" style="font-weight: bold; color: var(--primary-color); font-size: 13px;">0</div>
+    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: grid; grid-template-columns: 1fr 1fr; row-gap: 10px;">
+        <div style="text-align: center;">
+            <span class="label-text" id="ui-year-label" style="font-size: 11px;">本年新增</span>
+            <div id="year-count" style="font-weight: bold; color: var(--text-main);">0</div>
         </div>
-	
-        <div class="stats-item">
-            <span class="label-text" id="ui-yesterday-label">昨日新增</span>
-            <div id="yesterday-count" style="font-weight: bold; color: var(--text-main); font-size: 13px;">0</div>
+        <div style="text-align: center;">
+            <span class="label-text" id="ui-month-label" style="font-size: 11px;">本月新增</span>
+            <div id="month-count" style="font-weight: bold; color: var(--text-main);">0</div>
         </div>
-		
-		
-        <div class="stats-item">
-            <span class="label-text" id="ui-month-label">本月更新</span>
-            <div id="month-count" style="font-weight: bold; color: var(--primary-color); font-size: 13px;">0</div>
+        <div style="text-align: center;">
+            <span class="label-text" id="ui-yesterday-label" style="font-size: 11px;">昨日新增</span>
+            <div id="yesterday-count" style="font-weight: bold; color: var(--text-main);">0</div>
+        </div>
+        <div style="text-align: center;">
+            <span class="label-text" id="ui-today-label" style="font-size: 11px;">今日新增</span>
+            <div id="today-count" style="font-weight: bold; color: var(--primary-color);">0</div>
         </div>
     </div>
 </div>
@@ -377,19 +346,19 @@
         }
     });
 
+// 寻找约 211 行，更新 LANG_DICT
 const LANG_DICT = {
-    "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换/Language", "stats_label": "📊 全馆影像总计", "unit": "卷", "before_yesterday_label": "前日新增", "yesterday_label": "昨日新增", "month_label": "本月更新", "search_placeholder": "搜索档案内容关键词", "search_info": "🔍 在 {1} 之前检索到 {0} 卷影像", "search_label": "搜索档案内容", "cat_label": "📂 栏目筛选", "slider_label": "⏳ 时间轴", "grid_label": "🖼️ 列数", "col_unit": "列", "load_more": "已加载 {0} 张 / 共 {1} 张", "no_more": "✅ 已加载全部 {0} 张", "cats": ["全部", "微博谈", "微历史", "微视野"] },
-    "🇭🇰 繁體中文": { "title": "🏮 影像館控制台", "main_title": "⏳ 歷史影像時間機器", "lang_label": "🌐 語言切換/Language", "stats_label": "📊 全館影像總計", "unit": "卷", "before_yesterday_label": "前日新增", "yesterday_label": "昨日新增", "month_label": "本月更新", "search_placeholder": "搜尋檔案內容關鍵詞", "search_info": "🔍 在 {1} 之前檢索到 {0} 卷影像", "search_label": "搜尋檔案內容", "cat_label": "📂 欄目篩選", "slider_label": "⏳ 時間軸", "grid_label": "🖼️ 列數", "col_unit": "列", "load_more": "已加載 {0} 張 / 共 {1} 張", "no_more": "✅ 已加載全部 {0} 張", "cats": ["全部", "微博談", "微歷史", "微視野"] },
-    "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ History Time Machine", "lang_label": "🌐 Language/語言切換", "stats_label": "📊 Total Archives", "unit": "Items", "before_yesterday_label": "Day Before Yesterday", "yesterday_label": "Added Yesterday", "month_label": "Updated This Month", "search_placeholder": "Search archive keywords", "search_info": "🔍 Found {0} items before {1}", "search_label": "Search Content", "cat_label": "📂 Categories", "slider_label": "⏳ Timeline", "grid_label": "🖼️ Grid Columns", "col_unit": "Cols", "load_more": "Loaded {0} / Total {1}", "no_more": "✅ All {0} loaded", "cats": ["All", "Weibo", "History", "Vision"] },
-    "🇯🇵 日本語": { "title": "🏮 コントロール", "main_title": "⏳ 歴史映像マシン", "lang_label": "🌐 言語切替/Language", "stats_label": "📊 総数", "unit": "巻", "before_yesterday_label": "一昨日追加", "yesterday_label": "昨日追加", "month_label": "今月更新", "search_placeholder": "アーカイブ検索", "search_info": "🔍 {1} までに {0} 件見つかりました", "search_label": "アーカイブ検索", "cat_label": "📂 項目フィルター", "slider_label": "⏳ タイムライン", "grid_label": "🖼️ 表示列数", "col_unit": "列", "load_more": "読み込み {0} / 合計 {1}", "no_more": "✅ 全 {0} 件読み込み完了", "cats": ["すべて", "微博談", "微歴史", "微視野"] },
-    "🇰🇷 한국어": { "title": "🏮 제어판", "main_title": "⏳ 역사 타임머신", "lang_label": "🌐 언어 변경/語言切換", "stats_label": "📊 아카이브 합계", "unit": "권", "before_yesterday_label": "그저께 추가", "yesterday_label": "어제 추가", "month_label": "이번 달 업데이트", "search_placeholder": "아카이브 검색", "search_info": "🔍 {1} 이전에 {0}개 발견", "search_label": "아카이브 검색", "cat_label": "📂 카테고리 필터", "slider_label": "⏳ 시간축", "grid_label": "🖼️ 열 개수", "col_unit": "열", "load_more": "로드 {0} / 총 {1}", "no_more": "✅ 모든 {0}개 로드 완료", "cats": ["전체", "微博談", "微歷史", "微視野"] },
-    "🇩🇪 Deutsch": { "title": "🏮 Konsole", "main_title": "⏳ Zeitmaschine", "lang_label": "🌐 Sprache/語言切換", "stats_label": "📊 Archiv Gesamt", "unit": "Bilder", "before_yesterday_label": "Vorgestern", "yesterday_label": "Gestern neu", "month_label": "Diesen Monat", "search_placeholder": "Archiv durchsuchen", "search_info": "🔍 {0} Bilder vor {1} gefunden", "search_label": "Suche", "cat_label": "📂 Kategorien", "slider_label": "⏳ Zeitachse", "grid_label": "🖼️ Spalten", "col_unit": "Sp.", "load_more": "{0} geladen / {1} gesamt", "no_more": "✅ Alle {0} geladen", "cats": ["Alle", "Diskussion", "Geschichte", "Vision"] },
-    "🇫🇷 Français": { "title": "🏮 Console", "main_title": "⏳ Machine du temps", "lang_label": "🌐 Langue/語言切換", "stats_label": "📊 Total des archives", "unit": "Images", "before_yesterday_label": "Avant-hier", "yesterday_label": "Ajouts d'hier", "month_label": "Ce mois-ci", "search_placeholder": "Rechercher dans les archives", "search_info": "🔍 {0} images trouvées avant {1}", "search_label": "Rechercher", "cat_label": "📂 Catégories", "slider_label": "⏳ Axe temporel", "grid_label": "🖼️ Colonnes", "col_unit": "Cols", "load_more": "{0} chargés / {1} total", "no_more": "✅ {0} images chargées", "cats": ["Tout", "Débats", "Histoire", "Vision"] },
-    "🇮🇷 فارسی": { "title": "🏮 کنسول", "main_title": "⏳ ماشین زمان", "lang_label": "🌐 زبان/語言切換", "stats_label": "📊 کل بایگانی", "unit": "مورد", "before_yesterday_label": "پریروز", "yesterday_label": "اضافه شده دیروز", "month_label": "به‌روزرسانی این ماه", "search_placeholder": "جستجو در آرشیو", "search_info": "🔍 {0} تصویر قبل از {1} پیدا شد", "search_label": "جستجوی آرشیو", "cat_label": "📂 دسته‌ها", "slider_label": "⏳ خط زمانی", "grid_label": "🖼️ ستون‌ها", "col_unit": "ستون", "load_more": "{0} بارگذاری شده / {1} کل", "no_more": "✅ تمام {0} مورد", "cats": ["همه", "گفتگو", "تاریخ", "چشم انداز"] },
-    "🇹🇭 ไทย": { "title": "🏮 แผงควบคุม", "main_title": "⏳ เครื่องย้อนเวลา", "lang_label": "🌐 เปลี่ยนภาษา/語言切換", "stats_label": "📊 คลังทั้งหมด", "unit": "รายการ", "before_yesterday_label": "เมื่อวานซืน", "yesterday_label": "เพิ่มเมื่อวาน", "month_label": "อัปเดตเดือนนี้", "search_placeholder": "ค้นหาในคลัง", "search_info": "🔍 พบ {0} รายการก่อน {1}", "search_label": "ค้นหา", "cat_label": "📂 กรองหมวดหมู่", "slider_label": "⏳ แกนเวลา", "grid_label": "🖼️ คอลัมน์", "col_unit": "คอลัมน์", "load_more": "โหลด {0} / ทั้งหมด {1}", "no_more": "✅ โหลดครบ {0} รายการ", "cats": ["ทั้งหมด", "พูดคุย", "ประวัติศาสตร์", "วิสัยทัศน์"] },
-    "🇻🇳 Tiếng Việt": { "title": "🏮 Bảng điều khiển", "main_title": "⏳ Cỗ máy thời gian", "lang_label": "🌐 Ngôn ngữ/語言切換", "stats_label": "📊 Tổng kho ảnh", "unit": "Mục", "before_yesterday_label": "Hôm kia", "yesterday_label": "Thêm hôm qua", "month_label": "Cập nhật tháng này", "search_placeholder": "Tìm kiếm nội dung", "search_info": "🔍 Tìm thấy {0} mục trước {1}", "search_label": "Tìm kiếm", "cat_label": "📂 Phân loại", "slider_label": "⏳ Trục thời gian", "grid_label": "🖼️ Số cột", "col_unit": "Cột", "load_more": "Đã tải {0} / Tổng {1}", "no_more": "✅ Đã tải xong {0} mục", "cats": ["Tất cả", "Thảo luận", "Lịch sử", "Tầm nhìn"] }
+    "🇨🇳 简体中文": { "title": "🏮 影像馆控制台", "main_title": "⏳ 历史影像时间机器", "lang_label": "🌐 语言切换/Language", "stats_label": "📊 全馆影像总计", "unit": "卷", "year_label": "本年新增", "month_label": "本月新增", "yesterday_label": "昨日新增", "today_label": "今日新增", "search_placeholder": "搜索档案内容关键词", "search_info": "🔍 在 {1} 之前检索到 {0} 卷影像", "search_label": "搜索档案内容", "cat_label": "📂 栏目筛选", "slider_label": "⏳ 时间轴", "grid_label": "🖼️ 列数", "col_unit": "列", "load_more": "已加载 {0} 张 / 共 {1} 张", "no_more": "✅ 已加载全部 {0} 张", "cats": ["全部", "微博谈", "微历史", "微视野"] },
+    "🇭🇰 繁體中文": { "title": "🏮 影像館控制台", "main_title": "⏳ 歷史影像時間機器", "lang_label": "🌐 語言切換/Language", "stats_label": "📊 全館影像總計", "unit": "卷", "year_label": "本年新增", "month_label": "本月新增", "yesterday_label": "昨日新增", "today_label": "今日新增", "search_placeholder": "搜尋檔案內容關鍵詞", "search_info": "🔍 在 {1} 之前檢索到 {0} 卷影像", "search_label": "搜尋檔案內容", "cat_label": "📂 欄目篩選", "slider_label": "⏳ 時間軸", "grid_label": "🖼️ 列數", "col_unit": "列", "load_more": "已加載 {0} 張 / 共 {1} 張", "no_more": "✅ 已加載全部 {0} 張", "cats": ["全部", "微博談", "微歷史", "微視野"] },
+    "🇺🇸 English": { "title": "🏮 Console", "main_title": "⏳ History Time Machine", "lang_label": "🌐 Language/語言切換", "stats_label": "📊 Total Archives", "unit": "Items", "year_label": "This Year", "month_label": "This Month", "yesterday_label": "Yesterday", "today_label": "Today", "search_placeholder": "Search archive keywords", "search_info": "🔍 Found {0} items before {1}", "search_label": "Search Content", "cat_label": "📂 Categories", "slider_label": "⏳ Timeline", "grid_label": "🖼️ Grid Columns", "col_unit": "Cols", "load_more": "Loaded {0} / Total {1}", "no_more": "✅ All {0} loaded", "cats": ["All", "Weibo", "History", "Vision"] },
+    "🇯🇵 日本語": { "title": "🏮 コントロール", "main_title": "⏳ 歴史映像マシン", "lang_label": "🌐 言語切替/Language", "stats_label": "📊 総数", "unit": "巻", "year_label": "今年追加", "month_label": "今月追加", "yesterday_label": "昨日追加", "today_label": "今日追加", "search_placeholder": "アーカイブ検索", "search_info": "🔍 {1} までに {0} 件見つかりました", "search_label": "アーカイブ検索", "cat_label": "📂 項目フィルター", "slider_label": "⏳ タイムライン", "grid_label": "🖼️ 表示列数", "col_unit": "列", "load_more": "読み込み {0} / 合計 {1}", "no_more": "✅ 全 {0} 件読み込み完了", "cats": ["すべて", "微博談", "微歴史", "微視野"] },
+    "🇰🇷 한국어": { "title": "🏮 제어판", "main_title": "⏳ 역사 타임머신", "lang_label": "🌐 언어 변경/語言切換", "stats_label": "📊 아카이브 합계", "unit": "권", "year_label": "올해 추가됨", "month_label": "이번 달 추가", "yesterday_label": "어제 추가됨", "today_label": "오늘 추가됨", "search_placeholder": "아카이브 검색", "search_info": "🔍 {1} 이전에 {0}개 발견", "search_label": "아카이브 검색", "cat_label": "📂 카테고리 필터", "slider_label": "⏳ 시간축", "grid_label": "🖼️ 열 개수", "col_unit": "열", "load_more": "로드 {0} / 총 {1}", "no_more": "✅ 모든 {0}개 로드 완료", "cats": ["전체", "微博談", "微歷史", "微視野"] },
+    "🇩🇪 Deutsch": { "title": "🏮 Konsole", "main_title": "⏳ Zeitmaschine", "lang_label": "🌐 Sprache/語言切換", "stats_label": "📊 Archiv Gesamt", "unit": "Bilder", "year_label": "Dieses Jahr", "month_label": "Diesen Monat", "yesterday_label": "Gestern neu", "today_label": "Heute neu", "search_placeholder": "Archiv durchsuchen", "search_info": "🔍 {0} Bilder vor {1} gefunden", "search_label": "Suche", "cat_label": "📂 Kategorien", "slider_label": "⏳ Zeitachse", "grid_label": "🖼️ Spalten", "col_unit": "Sp.", "load_more": "{0} geladen / {1} gesamt", "no_more": "✅ Alle {0} geladen", "cats": ["Alle", "Diskussion", "Geschichte", "Vision"] },
+    "🇫🇷 Français": { "title": "🏮 Console", "main_title": "⏳ Machine du temps", "lang_label": "🌐 Langue/語言切換", "stats_label": "📊 Total des archives", "unit": "Images", "year_label": "Cette année", "month_label": "Ce mois-ci", "yesterday_label": "Ajouts d'hier", "today_label": "Ajouts d'aujourd'hui", "search_placeholder": "Rechercher dans les archives", "search_info": "🔍 {0} images trouvées avant {1}", "search_label": "Rechercher", "cat_label": "📂 Catégories", "slider_label": "⏳ Axe temporel", "grid_label": "🖼️ Colonnes", "col_unit": "Cols", "load_more": "{0} chargés / {1} total", "no_more": "✅ {0} images chargées", "cats": ["Tout", "Débats", "Histoire", "Vision"] },
+    "🇮🇷 فارسی": { "title": "🏮 کنسول", "main_title": "⏳ ماشین زمان", "lang_label": "🌐 زبان/語言切換", "stats_label": "📊 کل بایگانی", "unit": "مورد", "year_label": "امسال", "month_label": "این ماه", "yesterday_label": "اضافه شده دیروز", "today_label": "اضافه شده امروز", "search_placeholder": "جستجو در آرشیو", "search_info": "🔍 {0} تصویر قبل از {1} پیدا شد", "search_label": "جستجوی آرشیو", "cat_label": "📂 دسته‌ها", "slider_label": "⏳ خط زمانی", "grid_label": "🖼️ ستون‌ها", "col_unit": "ستون", "load_more": "{0} بارگذاری شده / {1} کل", "no_more": "✅ تمام {0} مورد", "cats": ["همه", "گفتگو", "تاریخ", "چشم انداز"] },
+    "🇹🇭 ไทย": { "title": "🏮 แผงควบคุม", "main_title": "⏳ เครื่องย้อนเวลา", "lang_label": "🌐 เปลี่ยนภาษา/語言切換", "stats_label": "📊 คลังทั้งหมด", "unit": "รายการ", "year_label": "ปีนี้", "month_label": "เดือนนี้", "yesterday_label": "เพิ่มเมื่อวาน", "today_label": "เพิ่มวันนี้", "search_placeholder": "ค้นหาในคลัง", "search_info": "🔍 พบ {0} รายการก่อน {1}", "search_label": "ค้นหา", "cat_label": "📂 กรองหมวดหมู่", "slider_label": "⏳ แกนเวลา", "grid_label": "🖼️ คอลัมน์", "col_unit": "คอลัมน์", "load_more": "โหลด {0} / ทั้งหมด {1}", "no_more": "✅ โหลดครบ {0} รายการ", "cats": ["ทั้งหมด", "พูดคุย", "ประวัติศาสตร์", "วิสัยทัศน์"] },
+    "🇻🇳 Tiếng Việt": { "title": "🏮 Bảng điều khiển", "main_title": "⏳ Cỗ máy thời gian", "lang_label": "🌐 Ngôn ngữ/語言切換", "stats_label": "📊 Tổng kho ảnh", "unit": "Mục", "year_label": "Năm nay", "month_label": "Tháng này", "yesterday_label": "Thêm hôm qua", "today_label": "Thêm hôm nay", "search_placeholder": "Tìm kiếm nội dung", "search_info": "🔍 Tìm thấy {0} mục trước {1}", "search_label": "Tìm kiếm", "cat_label": "📂 Phân loại", "slider_label": "⏳ Trục thời gian", "grid_label": "🖼️ Số cột", "col_unit": "Cột", "load_more": "Đã tải {0} / Tổng {1}", "no_more": "✅ Đã tải xong {0} mục", "cats": ["Tất cả", "Thảo luận", "Lịch sử", "Tầm nhìn"] }
 };
-
 
     const SB_URL = "https://ztsdhjjnydrnsxgsheyb.supabase.co";
     const SB_KEY = "sb_publishable_39tYq9zt52DxihifjY_ENw_elQW0FoK";
@@ -413,44 +382,37 @@ const LANG_DICT = {
         await refreshData(true);
     }
 
+// 寻找约 233 行，替换整个 fetchGlobalTotal 函数
 async function fetchGlobalTotal() {
-    try {
-        // 1. 获取全馆总数
-        const { count: totalCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true });
-        document.getElementById('total-count').innerText = totalCount ? totalCount.toLocaleString() : "0";
+    // 1. 获取全馆总数
+    const { count: totalCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true });
+    document.getElementById('total-count').innerText = totalCount ? totalCount.toLocaleString() : "0";
 
-        // --- 修正后的日期计算逻辑 ---
-        const now = new Date();
-        const formatDate = (d) => d.toISOString().split('T')[0];
+    // 2. 计算日期节点
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-        // 今日
-        const todayStr = formatDate(now);
-        
-        // 昨日
-        const yesterday = new Date();
-        yesterday.setDate(now.getDate() - 1);
-        const yesterdayStr = formatDate(yesterday);
-        
-        // 本月第一天 (确保 YYYY-MM-01 格式)
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const firstDayOfMonth = `${year}-${month}-01`;
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const firstDayOfYear = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
 
-        // 并行查询
-        const [todayRes, yesterdayRes, monthRes] = await Promise.all([
-            mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', todayStr),
-            mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', yesterdayStr),
-            mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).gte('production_date', firstDayOfMonth)
-        ]);
+    // 3. 获取今日新增
+    const { count: tCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', todayStr);
+    // 4. 获取昨日新增
+    const { count: yCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', yesterdayStr);
+    // 5. 获取本月新增 (>= 本月1号)
+    const { count: mCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).gte('production_date', firstDayOfMonth);
+    // 6. 获取本年新增 (>= 本年1月1号)
+    const { count: yearCountVal } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).gte('production_date', firstDayOfYear);
 
-        // 更新 UI
-        document.getElementById('today-count').innerText = todayRes.count || 0;
-        document.getElementById('yesterday-count').innerText = yesterdayRes.count || 0;
-        document.getElementById('month-count').innerText = monthRes.count || 0;
-
-    } catch (err) {
-        console.error("统计数据加载失败:", err);
-    }
+    // 更新到页面
+    document.getElementById('today-count').innerText = tCount || 0;
+    document.getElementById('yesterday-count').innerText = yCount || 0;
+    document.getElementById('month-count').innerText = mCount || 0;
+    document.getElementById('year-count').innerText = yearCountVal || 0;
 }
 
     async function fetchDateRange() {
@@ -479,9 +441,7 @@ async function fetchGlobalTotal() {
     }
 
     function changeLang(val) { state.lang = val; updateLanguage(); refreshData(true); }
-	
-    // ... 多语言切换 ...
-
+//  updateLanguage 函数内添加年月日
     function updateLanguage() {
         const L = LANG_DICT[state.lang];
         document.getElementById('ui-title').innerText = L.title;
@@ -497,8 +457,7 @@ async function fetchGlobalTotal() {
         document.getElementById('grid-display').innerText = `${state.grid} ${L.col_unit}`;
         document.getElementById('ui-yesterday-label').innerText = L.yesterday_label;
         document.getElementById('ui-today-label').innerText = L.today_label;
-        document.getElementById('ui-before-yesterday-label').innerText = L.before_yesterday_label;
-        document.getElementById('ui-yesterday-label').innerText = L.yesterday_label;
+        document.getElementById('ui-year-label').innerText = L.year_label;
         document.getElementById('ui-month-label').innerText = L.month_label;
 
         const catGroup = document.getElementById('category-group');
