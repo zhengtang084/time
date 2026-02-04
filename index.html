@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- 数据取值 -->
+    <!-- 界面优化-->
     <title>博谈影像档案库 ChinaTime - 历史影像时间机器</title>
     <meta name="description" content="博谈网历史影像档案库，收录2014年以来微博谈、微历史、微视野等栏目经典图片，支持时间轴、文字搜索、多语言浏览，非商业学术研究专用。">
     <meta name="keywords" content="博谈网,历史影像,微博谈,微历史,微视野,中国档案,互联网图片库,博谈影像档案库">
@@ -92,20 +92,20 @@
 
         #sidebar {
             width: 300px;
-            padding: 25px;
+            padding: 15px 20px; // [新增]
             box-sizing: border-box;
             overflow-y: auto;
             height: 100%;
         }
 
-        .sidebar-item { margin-bottom: 25px; }
+        .sidebar-item { margin-bottom: 15px; }    // [新增]
         .label-text { font-size: 13px; color: #888; margin-bottom: 8px; display: block;}
         .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         
         .range-sub-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-main); margin-top: 4px; opacity: 0.8; }
         
-        .stats-box { background: var(--control-bg); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 25px; border: 1px solid var(--border-color); }
-        #total-count { font-size: 24px; font-weight: bold; color: var(--primary-color); display: block; margin-top: 5px; }
+        .stats-box { background: var(--control-bg); padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        #total-count { font-size: 22px; font-weight: bold; color: var(--primary-color); display: block; margin-top: 2px; }
 
         select { 
             width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); 
@@ -122,7 +122,7 @@
         .btn-search i { font-size: 18px; }
 
         .radio-group { display: flex; flex-direction: column; gap: 8px; }
-        .radio-item { cursor: pointer; padding: 10px; border-radius: 6px; background: var(--control-bg); font-size: 13px; color: var(--text-main); transition: 0.2s; border: 1px solid var(--border-color); }
+        .radio-item { cursor: pointer; padding: 6px 10px; border-radius: 6px; background: var(--control-bg); font-size: 13px; color: var(--text-main); transition: 0.2s; border: 1px solid var(--border-color); } // [新增]
         .radio-item.active { background: var(--primary-color); color: white; font-weight: bold; }
 
         input[type="range"] {
@@ -258,7 +258,7 @@
 
 <div id="sidebar-container">
     <div id="sidebar">
-        <h2 id="ui-title">🏮 控制台</h2>
+<h3 id="ui-title" style="margin-top: 0; margin-bottom: 15px;">🏮 控制台</h3> // [新增] 改为 h3 并清除顶部外边距
         <div class="sidebar-item">
             <label class="label-text" id="ui-lang-label">🌐 语言切换/Language</label>
             <select id="lang-select" onchange="changeLang(this.value)"></select>
