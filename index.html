@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- SEO 优化 + 社交分享卡片 -->
+    <!-- 数据取值 -->
     <title>博谈影像档案库 ChinaTime - 历史影像时间机器</title>
     <meta name="description" content="博谈网历史影像档案库，收录2014年以来微博谈、微历史、微视野等栏目经典图片，支持时间轴、文字搜索、多语言浏览，非商业学术研究专用。">
     <meta name="keywords" content="博谈网,历史影像,微博谈,微历史,微视野,中国档案,互联网图片库,博谈影像档案库">
@@ -419,37 +419,22 @@ const LANG_DICT = {
         await refreshData(true);
     }
 
-// 寻找约 233 行，替换整个 fetchGlobalTotal 函数
+
+// [功能说明]：最简读取模式。仅从 site_statistics 表获取一行数据并更新 UI，彻底消除多路并发计算。
 async function fetchGlobalTotal() {
-    // 1. 获取全馆总数
-    const { count: totalCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true });
-    document.getElementById('total-count').innerText = totalCount ? totalCount.toLocaleString() : "0";
-
-    // 2. 计算日期节点
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const firstDayOfYear = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
-
-    // 3. 获取今日新增
-    const { count: tCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', todayStr);
-    // 4. 获取昨日新增
-    const { count: yCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).eq('production_date', yesterdayStr);
-    // 5. 获取本月新增 (>= 本月1号)
-    const { count: mCount } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).gte('production_date', firstDayOfMonth);
-    // 6. 获取本年新增 (>= 本年1月1号)
-    const { count: yearCountVal } = await mySupabase.from('botan_final').select('*', { count: 'exact', head: true }).gte('production_date', firstDayOfYear);
-
-    // 更新到页面
-    document.getElementById('today-count').innerText = tCount || 0;
-    document.getElementById('yesterday-count').innerText = yCount || 0;
-    document.getElementById('month-count').innerText = mCount || 0;
-    document.getElementById('year-count').innerText = yearCountVal || 0;
+         const { data } = await mySupabase
+                .from('site_statistics')
+               .select('*')
+               .eq('id', 'global_stats')
+              .single();
+        
+        if (data) {
+                 document.getElementById('total-count').innerText = (data.total_count || 0).toLocaleString();
+                 document.getElementById('today-count').innerText = data.today_count || 0;
+                 document.getElementById('yesterday-count').innerText = data.yesterday_count || 0;
+                 document.getElementById('month-count').innerText = data.month_count || 0;
+               document.getElementById('year-count').innerText = data.year_count || 0;
+             }
 }
 
     async function fetchDateRange() {
