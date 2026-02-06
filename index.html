@@ -230,8 +230,47 @@ transition: opacity 0.5s ease-in-out;
     touch-action: none !important; 
 }
 	   #lightbox-img { max-width: 95vw; max-height: 80vh; object-fit: contain; }
-        .lb-nav { position: absolute; top: 50%; width: 96%; display: flex; justify-content: space-between; pointer-events: none; transform: translateY(-50%); }
-        .lb-btn { pointer-events: auto; background: rgba(255,255,255,0.1); color: white; border: none; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; font-size: 24px; transition: 0.3s; }
+/* [原有] .lb-nav { position: absolute; top: 50%; width: 96%; ... } */
+/* [删除] 移除旧的居中定位逻辑 */
+
+/* [新增] 灯箱底部控制栏布局 */
+.lb-nav { 
+    position: absolute; 
+    bottom: 40px; /* 距离底部距离 */
+    left: 0;
+    width: 100%; 
+    display: flex; 
+    justify-content: center; /* 水平居中 */
+    align-items: center; 
+    gap: 40px; /* 按钮之间的间距 */
+    pointer-events: none; 
+    transform: none; /* 移除原来的垂直偏移 */
+}
+
+/* [新增] 统一灯箱内按钮的可点击属性 */
+.lb-btn { 
+    pointer-events: auto; 
+    background: rgba(255,255,255,0.15); 
+    color: white; 
+    border: none; 
+    width: 55px; 
+    height: 55px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer; 
+    border-radius: 50%; 
+    font-size: 20px; 
+    transition: 0.3s;
+    backdrop-filter: blur(5px); /* 增加毛玻璃效果提升质感 */
+}
+
+/* [新增] 修正下载按钮的定位，让其加入 Flex 队列 */
+#lb-download {
+    position: static !important; /* 移除原有的 absolute 定位 */
+    order: 2; /* 确保排在中间 */
+}
+       .lb-btn { pointer-events: auto; background: rgba(255,255,255,0.1); color: white; border: none; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; font-size: 24px; transition: 0.3s; }
         .lb-btn:hover { background: var(--primary-color); }
         .lb-close { position: absolute; top: 30px; right: 30px; width: 45px; height: 45px; font-size: 28px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
@@ -365,13 +404,33 @@ transition: opacity 0.5s ease-in-out;
     <a id="lb-download" class="lb-btn" style="right:80px; pointer-events:auto;" target="_blank">
         <i class="fas fa-download"></i>
     </a>
-    <div class="lb-nav">
-        <button class="lb-btn" onclick="moveLb(-1)"><i class="fas fa-chevron-left"></i></button>
-        <button class="lb-btn" onclick="moveLb(1)"><i class="fas fa-chevron-right"></i></button>
-    </div>
+<div class="lb-nav">
+    <button class="lb-btn" onclick="moveLb(-1)"><i class="fas fa-chevron-left"></i></button>
+    
+    <a id="lb-download" class="lb-btn" target="_blank">
+        <i class="fas fa-download"></i>
+    </a>
+    
+    <button class="lb-btn" onclick="moveLb(1)"><i class="fas fa-chevron-right"></i></button>
+</div>
+
     <img id="lightbox-img" alt="">
     <div id="lb-counter" style="color:white; margin-top:15px; font-size:14px; opacity:0.8;"></div>
-    <div id="lb-caption" style="color:white; margin-top:25px; text-align:center; padding:0 40px; max-width: 800px; font-size:14px; line-height:1.6;"></div>
+<div id="lb-caption" 
+     style="color:white; 
+            margin-top:15px; 
+            text-align:center; 
+            padding:0 40px; 
+            max-width: 800px; 
+            font-size:14px; 
+            line-height:1.6; 
+            /* [新增] 核心修改：给底部留出 120px 空间，防止遮挡按钮 */
+            margin-bottom: 120px; 
+            /* [新增] 限制文字区域高度为屏幕的 20%，防止挤压图片 */
+            max-height: 20vh; 
+            /* [新增] 如果文字过长，允许在此区域内上下滑动 */
+            overflow-y: auto;">
+</div>
     <div id="lb-copyright">图片版权属于博谈网 https://botanwang.com/</div>
 </div>
 
@@ -672,12 +731,12 @@ async function fetchGlobalTotal() {
         document.body.classList.remove('body-scroll-lock');
 		// [新增] 核心拦截逻辑：直接防止灯箱层的手势传递到 body
 document.getElementById('lightbox').addEventListener('touchmove', function(e) {
-    if (e.target.id === 'lightbox' || e.target.id === 'lightbox-img' || e.target.id === 'lb-caption') {
+    // // [原有] 拦截灯箱背景和图片的滑动
+    // // [删除] || e.target.id === 'lb-caption' (删除这一项，以便文字区域可以滚动)
+    if (e.target.id === 'lightbox' || e.target.id === 'lightbox-img') {
         e.preventDefault(); 
     }
-}, { passive: false });
-		
-		
+}, { passive: false });		
 		
     }
 
