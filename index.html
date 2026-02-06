@@ -229,7 +229,7 @@ transition: opacity 0.5s ease-in-out;
     position: fixed !important; 
     touch-action: none !important; 
 }
-	   #lightbox-img { max-width: 95vw; max-height: 80vh; object-fit: contain; }
+	   #lightbox-img { max-width: 95vw; max-height: 70vh; object-fit: contain; margin-top: 80px; }
 /* [原有] .lb-nav { position: absolute; top: 50%; width: 96%; ... } */
 /* [删除] 移除旧的居中定位逻辑 */
 
@@ -407,10 +407,7 @@ transition: opacity 0.5s ease-in-out;
 <div class="lb-nav">
     <button class="lb-btn" onclick="moveLb(-1)"><i class="fas fa-chevron-left"></i></button>
     
-    <a id="lb-download" class="lb-btn" target="_blank">
-        <i class="fas fa-download"></i>
-    </a>
-    
+   
     <button class="lb-btn" onclick="moveLb(1)"><i class="fas fa-chevron-right"></i></button>
 </div>
 
