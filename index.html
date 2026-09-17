@@ -227,6 +227,7 @@ transition: opacity 0.5s ease-in-out;
     height: 100% !important;
     width: 100% !important;
     position: fixed !important; 
+    top: var(--scroll-lock-top, 0) !important;
     touch-action: none !important; 
 }
 	   #lightbox-img { max-width: 95vw; max-height: 70vh; object-fit: contain; margin-top: 80px; }
@@ -268,7 +269,6 @@ transition: opacity 0.5s ease-in-out;
 /* [新增] 修正下载按钮的定位，让其加入 Flex 队列 */
 #lb-download {
     position: static !important; /* 移除原有的 absolute 定位 */
-    order: 2; /* 确保排在中间 */
 }
        .lb-btn { pointer-events: auto; background: rgba(255,255,255,0.1); color: white; border: none; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; font-size: 24px; transition: 0.3s; }
         .lb-btn:hover { background: var(--primary-color); }
@@ -479,7 +479,7 @@ const LANG_DICT = {
     const SB_KEY = "sb_publishable_39tYq9zt52DxihifjY_ENw_elQW0FoK";
     const mySupabase = supabase.createClient(SB_URL, SB_KEY);
 
-    let state = { lang: "🇨🇳 简体中文", category: "全部", search: "", dateLimit: null, grid: 3, page: 0, pageSize: 50, allImages: [], currentLbIdx: 0, lastDate: null, totalSearchCount: 0, loading: false };
+    let state = { lang: "🇨🇳 简体中文", category: "全部", search: "", dateLimit: null, grid: 3, page: 0, pageSize: 50, allImages: [], currentLbIdx: 0, lastDate: null, totalSearchCount: 0, loading: false, scrollYBeforeLb: 0 };
 
     async function initUI() {
         const langSelect = document.getElementById('lang-select');
@@ -723,6 +723,8 @@ async function fetchGlobalTotal() {
         state.currentLbIdx = state.allImages.findIndex(i => i.image_url === url);
         if (state.currentLbIdx < 0) return;
         updateLb();
+        state.scrollYBeforeLb = window.scrollY || window.pageYOffset || 0;
+        document.body.style.setProperty('--scroll-lock-top', `-${state.scrollYBeforeLb}px`);
         document.getElementById('lightbox').style.display = 'flex';
         document.body.classList.add('body-scroll-lock');
     }
@@ -752,6 +754,8 @@ async function fetchGlobalTotal() {
     function closeLb() { 
         document.getElementById('lightbox').style.display = 'none'; 
         document.body.classList.remove('body-scroll-lock');
+        document.body.style.removeProperty('--scroll-lock-top');
+        window.scrollTo(0, state.scrollYBeforeLb || 0);
     }
 
     document.getElementById('lightbox').addEventListener('touchmove', function(e) {
