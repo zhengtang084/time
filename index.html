@@ -401,13 +401,11 @@ transition: opacity 0.5s ease-in-out;
 
 <div id="lightbox">
     <button class="lb-btn lb-close" onclick="closeLb()"><i class="fas fa-times"></i></button>
-    <a id="lb-download" class="lb-btn" style="right:80px; pointer-events:auto;" target="_blank">
-        <i class="fas fa-download"></i>
-    </a>
 <div class="lb-nav">
     <button class="lb-btn" onclick="moveLb(-1)"><i class="fas fa-chevron-left"></i></button>
-    
-   
+    <a id="lb-download" class="lb-btn" target="_blank" rel="noopener">
+        <i class="fas fa-download"></i>
+    </a>
     <button class="lb-btn" onclick="moveLb(1)"><i class="fas fa-chevron-right"></i></button>
 </div>
 
@@ -432,7 +430,7 @@ transition: opacity 0.5s ease-in-out;
 </div>
 
  <!-- 回到顶部按钮 -->
-<button id="back-to-top" title="回到顶部" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 999; background: var(--primary-color); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;">
+<button id="back-to-top" title="回到顶部" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 999; background: var(--primary-color); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.3s ease; align-items: center; justify-content: center;">
     <i class="fas fa-chevron-up"></i>
 </button>
 
@@ -629,52 +627,89 @@ async function fetchGlobalTotal() {
         updateLoadMoreButton();
     }
 
+    function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
+    function highlightSearchTerm(value) {
+        let safeText = escapeHTML(value);
+        if (!state.search || state.search.trim() === "") return safeText;
+
+        try {
+            const safeSearch = escapeHTML(state.search.trim());
+            const escapedSearch = safeSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${escapedSearch})`, 'gi');
+            safeText = safeText.replace(regex, '<mark class="search-highlight">$1</mark>');
+        } catch (e) {
+            console.error("Highlight error:", e);
+        }
+        return safeText;
+    }
+
     function renderCards(data) {
         const container = document.getElementById('gallery');
         
         data.forEach((item) => {
-		
-// [新增]     // 关键词高亮处理逻辑
-            let displayDescription = item.description || '';
-            if (state.search && state.search.trim() !== "") {
-            try {
-                    const escapedSearch = state.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // 转义正则特殊字符
-                  const regex = new RegExp(`(${escapedSearch})`, 'gi');
-                 displayDescription = displayDescription.replace(regex, '<mark class="search-highlight">$1</mark>');
-              } catch (e) { console.error("Highlight error:", e); }
-              }
-		
-		
-		
-		
             if (item.production_date !== state.lastDate) {
                 const header = document.createElement('div');
                 header.className = 'date-group-header';
-                header.innerHTML = `<i class="fas fa-calendar-alt"></i> ${item.production_date}`;
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-calendar-alt';
+                header.appendChild(icon);
+                header.appendChild(document.createTextNode(` ${item.production_date || ''}`));
                 container.appendChild(header);
                 state.lastDate = item.production_date;
             }
 
             const card = document.createElement('div');
             card.className = 'card';
-            card.innerHTML = `
 
- <div class="card-img-container">
-     <img src="${item.image_url}" 
-          onclick="openLbByUrl('${item.image_url}')" 
-          loading="lazy" 
-         onload="this.classList.add('loaded')" 
-         onerror="this.src='https://via.placeholder.com/320x240?text=Load+Error';">
- </div>
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'card-img-container';
 
-                <div class="card-info">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span class="item-date">📅 ${item.production_date}</span>
-                        <a class="item-title-link" onclick="toggleInfo(this)">${item.title || '博谈档案'}</a>
-                    </div>
-                    <div class="description-panel">${displayDescription}</div> 
-                </div>
-            `;
+            const img = document.createElement('img');
+            img.src = item.image_url || '';
+            img.loading = 'lazy';
+            img.alt = item.title || item.description || '博谈档案';
+            img.addEventListener('click', () => openLbByUrl(item.image_url));
+            img.addEventListener('load', () => img.classList.add('loaded'));
+            img.addEventListener('error', () => {
+                img.src = 'https://via.placeholder.com/320x240?text=Load+Error';
+            }, { once: true });
+            imgContainer.appendChild(img);
+
+            const info = document.createElement('div');
+            info.className = 'card-info';
+
+            const metaRow = document.createElement('div');
+            metaRow.style.cssText = 'display:flex; justify-content:space-between; align-items:center;';
+
+            const date = document.createElement('span');
+            date.className = 'item-date';
+            date.textContent = `📅 ${item.production_date || ''}`;
+
+            const title = document.createElement('a');
+            title.className = 'item-title-link';
+            title.textContent = item.title || '博谈档案';
+            title.addEventListener('click', () => toggleInfo(title));
+
+            metaRow.appendChild(date);
+            metaRow.appendChild(title);
+
+            const description = document.createElement('div');
+            description.className = 'description-panel';
+            description.innerHTML = highlightSearchTerm(item.description || '');
+
+            info.appendChild(metaRow);
+            info.appendChild(description);
+            card.appendChild(imgContainer);
+            card.appendChild(info);
             container.appendChild(card);
         });
     }
@@ -686,6 +721,7 @@ async function fetchGlobalTotal() {
 
     function openLbByUrl(url) {
         state.currentLbIdx = state.allImages.findIndex(i => i.image_url === url);
+        if (state.currentLbIdx < 0) return;
         updateLb();
         document.getElementById('lightbox').style.display = 'flex';
         document.body.classList.add('body-scroll-lock');
@@ -693,21 +729,10 @@ async function fetchGlobalTotal() {
 
     function updateLb() {
         const item = state.allImages[state.currentLbIdx];
+        if (!item) return;
         document.getElementById('lightbox-img').src = item.image_url;
-		
-// [新增]     // 灯箱内文本高亮处理
-		let lbDescription = item.description || '';
-				if (state.search && state.search.trim() !== "") {
-				const escapedSearch = state.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-				const regex = new RegExp(`(${escapedSearch})`, 'gi');
-				lbDescription = lbDescription.replace(regex, '<mark class="search-highlight">$1</mark>');
-			 }
-
-// // [新增]   
-        document.getElementById('lb-caption').innerHTML = lbDescription; // 注意：改为 innerHTML 以解析高亮标签
-		
-		
-// [删除]            document.getElementById('lb-caption').innerText = item.description || '';
+        document.getElementById('lightbox-img').alt = item.title || item.description || '博谈档案';
+        document.getElementById('lb-caption').innerHTML = highlightSearchTerm(item.description || '');
 		
         document.getElementById('lb-copyright').innerText = '图片版权属于博谈网 https://botanwang.com/';
         
@@ -719,6 +744,7 @@ async function fetchGlobalTotal() {
     }
 
     function moveLb(dir) {
+        if (!state.allImages.length) return;
         state.currentLbIdx = (state.currentLbIdx + dir + state.allImages.length) % state.allImages.length;
         updateLb();
     }
@@ -726,16 +752,13 @@ async function fetchGlobalTotal() {
     function closeLb() { 
         document.getElementById('lightbox').style.display = 'none'; 
         document.body.classList.remove('body-scroll-lock');
-		// [新增] 核心拦截逻辑：直接防止灯箱层的手势传递到 body
-document.getElementById('lightbox').addEventListener('touchmove', function(e) {
-    // // [原有] 拦截灯箱背景和图片的滑动
-    // // [删除] || e.target.id === 'lb-caption' (删除这一项，以便文字区域可以滚动)
-    if (e.target.id === 'lightbox' || e.target.id === 'lightbox-img') {
-        e.preventDefault(); 
     }
-}, { passive: false });		
-		
-    }
+
+    document.getElementById('lightbox').addEventListener('touchmove', function(e) {
+        if (e.target.id === 'lightbox' || e.target.id === 'lightbox-img') {
+            e.preventDefault();
+        }
+    }, { passive: false });
 
     function triggerSearch() { 
         state.search = document.getElementById('search-input').value.trim(); 
