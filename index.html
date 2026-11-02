@@ -160,20 +160,22 @@
             transition: margin-left 0.3s ease;
         }
 
-        /* 瀑布流：每个日期分组内为 N 列 flex 容器，新卡片放入当前最短列，已有卡片位置不变 */
+        /* 瀑布流：全局最短列布局。卡片与日期标题均绝对定位，日期标题横跨全宽 */
         .gallery { 
+            position: relative;
             width: 100%;
         }
-        .masonry {
-            display: flex;
-            align-items: flex-start; /* 关键：列高度按内容计算，不被拉伸，便于比较最短列 */
-            gap: 30px;
+        .gallery .date-group-header {
+            position: absolute;
+            left: 0;
+            right: 0;
+            margin: 0;
+            box-sizing: border-box;
         }
-        .masonry-col {
-            flex: 1 1 0;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
+        .gallery .card {
+            position: absolute;
+            margin: 0;
+            box-sizing: border-box;
         }
         
         .date-group-header {
@@ -317,7 +319,7 @@ transition: opacity 0.5s ease-in-out;
 }
        .lb-btn { pointer-events: auto; background: rgba(255,255,255,0.1); color: white; border: none; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; font-size: 24px; transition: 0.3s; }
         .lb-btn:hover { background: var(--primary-color); }
-        .lb-close { position: absolute; top: 30px; right: 30px; width: 45px; height: 45px; font-size: 28px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .lb-close { position: absolute; top: 30px; right: 30px; width: 45px; height: 45px; font-size: 28px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; /* 保证始终在放大后的图片之上 */ }
 
         #load-more { display: block; margin: 60px auto; padding: 15px 40px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; max-width: 80%; line-height: 1.5; }
 
@@ -348,12 +350,10 @@ transition: opacity 0.5s ease-in-out;
             #sidebar-container { transform: translateX(-100%); }
             #sidebar-container.open { transform: translateX(0); }
             #main-content { margin-left: 0; padding: 70px 15px 20px; }
-            .masonry { gap: 15px; }
             #sidebar { width: 100%; padding: 70px 15px 20px; }
         }
 
         @media (max-width: 500px) {
-            .masonry { gap: 10px; }
             .lb-nav { gap: 12px; }
             .lb-btn { width: 44px; height: 44px; }
             .lb-zoom-group { gap: 4px; }
@@ -534,7 +534,7 @@ const LANG_DICT = {
     const SB_KEY = "sb_publishable_39tYq9zt52DxihifjY_ENw_elQW0FoK";
     const mySupabase = supabase.createClient(SB_URL, SB_KEY);
 
-    let state = { lang: "🇨🇳 简体中文", category: "全部", search: "", dateLimit: null, grid: 3, page: 0, pageSize: 50, allImages: [], currentLbIdx: 0, lastDate: null, totalSearchCount: 0, loading: false, scrollYBeforeLb: 0, requestId: 0 };
+    let state = { lang: "🇨🇳 简体中文", category: "全部", search: "", dateLimit: null, grid: 3, page: 0, pageSize: 50, allImages: [], currentLbIdx: 0, lastDate: null, totalSearchCount: 0, loading: false, scrollYBeforeLb: 0, requestId: 0, latestDate: null };
 
     async function initUI() {
         const langSelect = document.getElementById('lang-select');
@@ -589,9 +589,11 @@ async function fetchGlobalTotal() {
         const slider = document.getElementById('date-slider');
         slider.min = earliestTime;
         slider.max = latestTime;
+        slider.step = 86400000; // 每步一天，避免键盘方向键只改动 1 毫秒
         slider.value = latestTime;
 
         state.dateLimit = latest;
+        state.latestDate = latest;
         document.getElementById('date-display').innerText = latest;
     }
 
@@ -623,7 +625,7 @@ async function fetchGlobalTotal() {
             const div = document.createElement('div');
             div.className = `radio-item ${state.category === realCat ? 'active' : ''}`;
             div.innerText = c;
-            div.onclick = () => { state.category = realCat; updateLanguage(); refreshData(true); };
+            div.onclick = () => { state.category = realCat; resetDateToLatest(); updateLanguage(); refreshData(true); };
             catGroup.appendChild(div);
         });
 
@@ -632,11 +634,6 @@ async function fetchGlobalTotal() {
 
     function updateGridColumns() {
         document.documentElement.style.setProperty('--column-count', state.grid);
-        // 列数变化时才整体重排；否则不改变已显示图片的位置
-        const existingBlock = document.querySelector('#gallery .masonry');
-        if (existingBlock && existingBlock.children.length !== state.grid) {
-            relayoutGallery();
-        }
     }
 
     function adjustColumnsOnResize() {
@@ -652,23 +649,30 @@ async function fetchGlobalTotal() {
         updateGridColumns();
     }
 
-    window.addEventListener('resize', adjustColumnsOnResize);
+    window.addEventListener('resize', () => {
+        adjustColumnsOnResize();
+        clearTimeout(window.rzTimer);
+        window.rzTimer = setTimeout(refreshLayout, 200);
+    });
 
     async function refreshData(isNew = false) {
         // 每次查询分配唯一序号，用于丢弃过期的异步响应
         const reqId = ++state.requestId;
         if (isNew) {
             clearTimeout(window.dt); // 取消尚未执行的时间轴防抖刷新
-            state.page = 0; state.allImages = []; state.lastDate = null; state.currentBlock = null; state.loading = false;
-            document.getElementById('gallery').innerHTML = "";
+            state.page = 0; state.allImages = []; state.lastDate = null; state.loading = false;
+            resetGallery();
         }
         const L = LANG_DICT[state.lang];
 
-        let query = mySupabase.from('botan_final').select('*', { count: 'exact' });
+        // 只在第一页请求总数，后续分页不再重复 count
+        let query = mySupabase.from('botan_final').select('*', state.page === 0 ? { count: 'exact' } : {});
         query = query.lte('production_date', state.dateLimit);
-        if (state.search) query = query.ilike('description', `%${state.search}%`);
+        if (state.search) query = query.ilike('description', `%${escapeLike(state.search)}%`);
         if (state.category !== "全部") query = query.eq('category', state.category);
-        query = query.order('production_date', { ascending: false }).range(state.page * state.pageSize, (state.page + 1) * state.pageSize - 1);
+        // 按日期降序，再按 id 降序作为稳定的第二排序键，避免同日期记录分页时重复或遗漏
+        query = query.order('production_date', { ascending: false }).order('id', { ascending: false })
+                     .range(state.page * state.pageSize, (state.page + 1) * state.pageSize - 1);
 
         let result;
         try {
@@ -684,6 +688,13 @@ async function fetchGlobalTotal() {
             console.error("Supabase error:", error);
             if (!isNew) state.page = Math.max(0, state.page - 1); // 回退页码，允许再次滚动重试
             state.loading = false;
+            if (isNew) {
+                document.getElementById('gallery').innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: var(--text-muted);">
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
+                        ${state.lang.includes('简体') ? '数据加载失败，请检查网络后重试' : 'Failed to load, please retry'}
+                    </div>`;
+            }
             return;
         }
         state.loading = false;
@@ -698,11 +709,48 @@ async function fetchGlobalTotal() {
 
 
 
-        state.totalSearchCount = count || 0;
+        if (count !== null && count !== undefined) state.totalSearchCount = count;
         document.getElementById('search-info').innerText = L.search_info.replace('{0}', state.totalSearchCount.toLocaleString()).replace('{1}', state.dateLimit);
         state.allImages = state.allImages.concat(data);
         renderCards(data);
         updateLoadMoreButton();
+        maybeLoadMore(); // 内容不足一屏时自动补载，直到可以滚动
+    }
+
+    // 滚动到底部附近时加载下一页（同一时间只允许一个加载任务）
+    async function loadMore() {
+        if (state.loading || state.allImages.length >= state.totalSearchCount) return false;
+        state.loading = true;
+        state.page++;
+        try {
+            await refreshData();
+        } catch (e) {
+            console.error("Load error:", e);
+            state.page = Math.max(0, state.page - 1);
+            state.loading = false;
+        }
+        return true;
+    }
+
+    function maybeLoadMore() {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
+            loadMore();
+        }
+    }
+
+    // 内联 SVG 占位图（不依赖第三方服务）
+    const PLACEHOLDER_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect width='100%25' height='100%25' fill='%23cccccc'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23555555' font-size='16'%3ELoad Error%3C/text%3E%3C/svg%3E";
+
+    function escapeLike(value) {
+        return String(value).replace(/[\\%_]/g, (c) => '\\' + c);
+    }
+
+    function isSafeImageUrl(url) {
+        try {
+            return new URL(url).protocol === 'https:';
+        } catch (e) {
+            return false;
+        }
     }
 
     function escapeHTML(value) {
@@ -715,50 +763,100 @@ async function fetchGlobalTotal() {
         }[char]));
     }
 
+    // 先在原始文本上按搜索词切分，再对每段单独转义，避免搜索词破坏 HTML 实体（如 amp 切断 &amp;）
     function highlightSearchTerm(value) {
-        let safeText = escapeHTML(value);
-        if (!state.search || state.search.trim() === "") return safeText;
+        const raw = String(value ?? '');
+        const term = (state.search || '').trim();
+        if (term === "") return escapeHTML(raw);
 
         try {
-            const safeSearch = escapeHTML(state.search.trim());
-            const escapedSearch = safeSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(`(${escapedSearch})`, 'gi');
-            safeText = safeText.replace(regex, '<mark class="search-highlight">$1</mark>');
+            const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // split 使用捕获组：奇数下标为匹配到的搜索词
+            const parts = raw.split(new RegExp(`(${escapedTerm})`, 'gi'));
+            return parts.map((part, i) => {
+                const safePart = escapeHTML(part);
+                return i % 2 === 1 ? `<mark class="search-highlight">${safePart}</mark>` : safePart;
+            }).join('');
         } catch (e) {
             console.error("Highlight error:", e);
+            return escapeHTML(raw);
         }
-        return safeText;
     }
 
-    // 创建一个日期分组下的瀑布流区块（N 列，N = 当前列数）
-    function createMasonryBlock() {
-        const block = document.createElement('div');
-        block.className = 'masonry';
-        for (let i = 0; i < state.grid; i++) {
-            const col = document.createElement('div');
-            col.className = 'masonry-col';
-            block.appendChild(col);
-        }
-        document.getElementById('gallery').appendChild(block);
-        return block;
+    // ===== 瀑布流布局 =====
+    // layout.colH：每列当前底部位置；layout.items：按放置顺序记录每个元素的列与高度
+    // 新卡片放入全局最短列；已放置的卡片列归属不变，仅在高度变化时纵向顺延
+    const layout = { items: [], colH: [], width: 0 };
+
+    function getGap() {
+        return window.innerWidth <= 500 ? 10 : window.innerWidth <= 900 ? 15 : 30;
     }
 
-    // 找到区块中当前最短的一列
-    function getShortestColumn(block) {
-        let best = block.children[0];
-        for (const col of block.children) {
-            if (col.offsetHeight < best.offsetHeight) best = col;
-        }
-        return best;
+    function getColWidth() {
+        const n = layout.colH.length || state.grid;
+        const width = document.getElementById('gallery').clientWidth;
+        return Math.floor((width - getGap() * (n - 1)) / n);
     }
 
-    // 按当前列数整体重排（仅在列数变化时调用，其他情况下不改变已有卡片位置）
-    function relayoutGallery() {
-        if (!state.allImages.length) return;
-        document.getElementById('gallery').innerHTML = "";
+    // 清空画布并按当前列数重置布局（仅在 新查询 / 列数或宽度变化 时调用）
+    function resetGallery() {
+        const gallery = document.getElementById('gallery');
+        gallery.innerHTML = "";
+        gallery.style.height = "";
+        layout.items = [];
+        layout.colH = new Array(state.grid).fill(0);
+        layout.width = gallery.clientWidth;
+    }
+
+    // 根据记录的高度重算所有元素位置（列归属不变）
+    function reflowGallery() {
+        const gallery = document.getElementById('gallery');
+        const gap = getGap();
+        const n = layout.colH.length;
+        const colW = getColWidth();
+        const colH = new Array(n).fill(0);
+        for (const item of layout.items) {
+            if (item.type === 'header') {
+                const top = Math.max(...colH);
+                item.el.style.top = `${top}px`;
+                colH.fill(top + item.h + gap);
+            } else {
+                const c = item.col;
+                item.el.style.left = `${c * (colW + gap)}px`;
+                item.el.style.top = `${colH[c]}px`;
+                colH[c] += item.h + gap;
+            }
+        }
+        layout.colH = colH;
+        gallery.style.height = layout.items.length ? `${Math.max(...colH)}px` : "";
+    }
+
+    // 卡片高度因图片加载或展开描述而变化时同步布局
+    function syncCardHeight(card) {
+        const rec = card && card._rec;
+        if (!rec) return;
+        const h = card.offsetHeight;
+        if (h !== rec.h) {
+            rec.h = h;
+            reflowGallery();
+        }
+    }
+
+    // 列数或窗口宽度变化时整体重建（保持滚动位置）
+    function refreshLayout() {
+        const gallery = document.getElementById('gallery');
+        if (!state.allImages.length) {
+            layout.width = gallery.clientWidth;
+            return;
+        }
+        if (layout.colH.length === state.grid && layout.width === gallery.clientWidth) return;
+        const savedY = window.scrollY;
+        gallery.style.minHeight = `${gallery.offsetHeight}px`; // 防止清空时页面变短导致滚动位置被钳制
+        resetGallery();
         state.lastDate = null;
-        state.currentBlock = null;
         renderCards(state.allImages);
+        gallery.style.minHeight = '';
+        window.scrollTo(0, savedY);
     }
 
     function renderCards(data) {
@@ -772,12 +870,15 @@ async function fetchGlobalTotal() {
                 icon.className = 'fas fa-calendar-alt';
                 header.appendChild(icon);
                 header.appendChild(document.createTextNode(` ${item.production_date || ''}`));
+                // 日期标题横跨全宽：放在所有列的最底部，之后各列都从它下方开始
+                const gap = getGap();
+                const top = Math.max(...layout.colH);
+                header.style.top = `${top}px`;
                 container.appendChild(header);
-                state.currentBlock = createMasonryBlock(); // 日期标题横跨全宽，其下开始新的瀑布流区块
+                const h = header.offsetHeight;
+                layout.colH.fill(top + h + gap);
+                layout.items.push({ type: 'header', el: header, h });
                 state.lastDate = item.production_date;
-            }
-            if (!state.currentBlock || !container.contains(state.currentBlock)) {
-                state.currentBlock = createMasonryBlock();
             }
 
             const card = document.createElement('div');
@@ -789,16 +890,17 @@ async function fetchGlobalTotal() {
 
 
             const img = document.createElement('img');
-            img.src = item.image_url || '';
+            img.src = isSafeImageUrl(item.image_url) ? item.image_url : PLACEHOLDER_IMG;
             img.loading = 'lazy';
             img.alt = item.title || item.description || '博谈档案';
             img.addEventListener('click', () => openLbByUrl(item.image_url));
             img.addEventListener('load', () => {
                 img.classList.add('loaded');
                 imgContainer.style.aspectRatio = ''; // 使用图片真实比例
+                syncCardHeight(card); // 高度变化后同步布局
             });
             img.addEventListener('error', () => {
-                img.src = 'https://via.placeholder.com/320x240?text=Load+Error';
+                img.src = PLACEHOLDER_IMG;
             }, { once: true });
             imgContainer.appendChild(img);
 
@@ -828,12 +930,32 @@ async function fetchGlobalTotal() {
             info.appendChild(description);
             card.appendChild(imgContainer);
             card.appendChild(info);
-            getShortestColumn(state.currentBlock).appendChild(card);
+            // 放入全局最短列
+            const gap = getGap();
+            const colW = getColWidth();
+            let c = 0;
+            for (let i = 1; i < layout.colH.length; i++) {
+                if (layout.colH[i] < layout.colH[c]) c = i;
+            }
+            const top = layout.colH[c];
+            card.style.width = `${colW}px`;
+            card.style.left = `${c * (colW + gap)}px`;
+            card.style.top = `${top}px`;
+            container.appendChild(card);
+            const h = card.offsetHeight;
+            layout.colH[c] = top + h + gap;
+            const rec = { type: 'card', el: card, col: c, h };
+            layout.items.push(rec);
+            card._rec = rec;
+            container.style.height = `${Math.max(...layout.colH)}px`;
         });
     }
 
     function toggleInfo(btn) { 
         const panel = btn.parentElement.nextElementSibling;
+        const card = btn.closest('.card');
+        // 描述展开/收起动画结束后，同步卡片高度
+        panel.addEventListener('transitionend', () => syncCardHeight(card), { once: true });
         panel.classList.toggle('open'); 
     }
 
@@ -851,22 +973,36 @@ async function fetchGlobalTotal() {
         const item = state.allImages[state.currentLbIdx];
         if (!item) return;
         resetLbZoom(); // 切换图片时重置为 100%
-        document.getElementById('lightbox-img').src = item.image_url;
+        const safeUrl = isSafeImageUrl(item.image_url);
+        document.getElementById('lightbox-img').src = safeUrl ? item.image_url : PLACEHOLDER_IMG;
         document.getElementById('lightbox-img').alt = item.title || item.description || '博谈档案';
         document.getElementById('lb-caption').innerHTML = highlightSearchTerm(item.description || '');
 		
         document.getElementById('lb-copyright').innerText = '图片版权属于博谈网 https://botanwang.com/';
         
         const downloadBtn = document.getElementById('lb-download');
-        downloadBtn.href = item.image_url;
-        downloadBtn.download = `botan_${item.production_date || 'unknown'}.jpg`;
+        if (safeUrl) {
+            downloadBtn.href = item.image_url;
+            downloadBtn.download = `botan_${item.production_date || 'unknown'}.jpg`;
+            downloadBtn.style.display = '';
+        } else {
+            downloadBtn.removeAttribute('href');
+            downloadBtn.style.display = 'none';
+        }
         
-        document.getElementById('lb-counter').innerText = `${state.currentLbIdx + 1} / ${state.allImages.length}`;
+        document.getElementById('lb-counter').innerText = `${state.currentLbIdx + 1} / ${state.totalSearchCount}`;
     }
 
-    function moveLb(dir) {
+    // 翻页：到达已加载的末尾时先加载下一页，全部加载完后循环到开头
+    async function moveLb(dir) {
         if (!state.allImages.length) return;
-        state.currentLbIdx = (state.currentLbIdx + dir + state.allImages.length) % state.allImages.length;
+        let next = state.currentLbIdx + dir;
+        if (next >= state.allImages.length && state.allImages.length < state.totalSearchCount) {
+            await loadMore();
+        }
+        if (next >= state.allImages.length) next = 0;
+        if (next < 0) next = state.allImages.length - 1;
+        state.currentLbIdx = next;
         updateLb();
     }
 
@@ -934,8 +1070,14 @@ async function fetchGlobalTotal() {
         zoomLb(e.deltaY < 0 ? LB_STEP : -LB_STEP);
     }, { passive: false });
 
+    // 记录当前触摸中的手指（用于区分单指拖动与双指缩放）
+    const lbTouchPointers = new Set();
+
     // 放大后按住拖动平移
     lbImgEl.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch') lbTouchPointers.add(e.pointerId);
+        // 双指时由捏合缩放接管，不启动拖动
+        if (lbTouchPointers.size > 1) { lbZoom.dragging = false; return; }
         if (lbZoom.scale <= LB_MIN_SCALE) return;
         e.preventDefault();
         lbZoom.dragging = true;
@@ -946,12 +1088,13 @@ async function fetchGlobalTotal() {
         applyLbZoom();
     });
     lbImgEl.addEventListener('pointermove', (e) => {
-        if (!lbZoom.dragging) return;
+        if (!lbZoom.dragging || lbTouchPointers.size > 1) return;
         lbZoom.x = lbZoom.baseX + (e.clientX - lbZoom.startX);
         lbZoom.y = lbZoom.baseY + (e.clientY - lbZoom.startY);
         applyLbZoom();
     });
-    const endLbDrag = () => {
+    const endLbDrag = (e) => {
+        if (e && e.pointerType === 'touch') lbTouchPointers.delete(e.pointerId);
         if (!lbZoom.dragging) return;
         lbZoom.dragging = false;
         lbImgEl.classList.remove('dragging');
@@ -960,17 +1103,54 @@ async function fetchGlobalTotal() {
     lbImgEl.addEventListener('pointerup', endLbDrag);
     lbImgEl.addEventListener('pointercancel', endLbDrag);
 
+    // 双指捏合缩放（手机端）
+    let pinch = null; // { dist, scale }
+    const touchDist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    lbImgEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            pinch = { dist: touchDist(e.touches), scale: lbZoom.scale };
+            lbZoom.dragging = false;
+            lbImgEl.classList.remove('dragging');
+        }
+    }, { passive: true });
+    lbImgEl.addEventListener('touchmove', (e) => {
+        if (!pinch || e.touches.length !== 2) return;
+        e.preventDefault(); // 阻止浏览器默认缩放/滚动
+        const dist = touchDist(e.touches);
+        if (pinch.dist > 0) setLbScale(pinch.scale * dist / pinch.dist);
+    }, { passive: false });
+    const endPinch = (e) => {
+        if (e.touches.length < 2) pinch = null;
+    };
+    lbImgEl.addEventListener('touchend', endPinch);
+    lbImgEl.addEventListener('touchcancel', endPinch);
+
     // 双击在 100% 与 200% 之间切换
     lbImgEl.addEventListener('dblclick', () => {
         if (lbZoom.scale > LB_MIN_SCALE) resetLbZoom(); else setLbScale(2);
     });
 
+    // 将时间轴滑块、state.dateLimit 与日期显示统一恢复为最新日期
+    function resetDateToLatest() {
+        if (!state.latestDate) return;
+        clearTimeout(window.dt); // 取消尚未执行的时间轴防抖刷新
+        state.dateLimit = state.latestDate;
+        document.getElementById('date-slider').value = new Date(state.latestDate).getTime();
+        document.getElementById('date-display').innerText = state.latestDate;
+    }
+
     function triggerSearch() { 
-        state.search = document.getElementById('search-input').value.trim(); 
+        const keyword = document.getElementById('search-input').value.trim();
+        if (keyword === '') resetDateToLatest(); // 清除搜索时恢复最新日期
+        state.search = keyword; 
         refreshData(true); 
     }
     document.getElementById('btn-search-trigger').onclick = triggerSearch;
     document.getElementById('search-input').onkeydown = (e) => { if(e.key === 'Enter') triggerSearch(); };
+    // 搜索框被清空时自动清除搜索并恢复最新日期（无需再点按钮）
+    document.getElementById('search-input').addEventListener('input', (e) => {
+        if (e.target.value.trim() === '' && state.search !== '') triggerSearch();
+    });
 
     document.getElementById('date-slider').oninput = (e) => {
         state.dateLimit = new Date(parseInt(e.target.value)).toISOString().split('T')[0];
@@ -982,6 +1162,7 @@ async function fetchGlobalTotal() {
         state.grid = parseInt(e.target.value);
         document.getElementById('grid-display').innerText = `${state.grid} ${LANG_DICT[state.lang].col_unit}`;
         adjustColumnsOnResize();
+        refreshLayout(); // 仅列数变化时整体重排
     };
 
     initUI();
@@ -990,7 +1171,8 @@ async function fetchGlobalTotal() {
     document.addEventListener('keydown', (e) => {
         const lightbox = document.getElementById('lightbox');
         if (lightbox.style.display === 'flex') {
-            e.preventDefault();
+            // 只拦截灯箱需要的按键，保留 F5、Ctrl+R、Tab 等浏览器默认行为
+            if (['ArrowLeft', 'ArrowRight', 'Escape'].includes(e.key)) e.preventDefault();
             if (e.key === 'ArrowLeft') moveLb(-1);
             else if (e.key === 'ArrowRight') moveLb(1);
             else if (e.key === 'Escape') closeLb();
@@ -998,18 +1180,15 @@ async function fetchGlobalTotal() {
     });
 
     // 无限滚动
+    // 使用 requestAnimationFrame 节流，避免滚动时频繁计算
+    let scrollTicking = false;
     window.addEventListener('scroll', () => {
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
-            if (state.allImages.length < state.totalSearchCount && !state.loading) {
-                state.loading = true;
-                state.page++;
-                // refreshData 内部会在请求结束时复位 state.loading；异常时在此兜底复位
-                refreshData().catch((e) => {
-                    console.error("Load error:", e);
-                    state.loading = false;
-                });
-            }
-        }
+        if (scrollTicking) return;
+        scrollTicking = true;
+        requestAnimationFrame(() => {
+            scrollTicking = false;
+            maybeLoadMore();
+        });
     });
     document.getElementById('load-more').style.display = 'none';
 
