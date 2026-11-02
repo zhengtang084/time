@@ -625,7 +625,7 @@ async function fetchGlobalTotal() {
             const div = document.createElement('div');
             div.className = `radio-item ${state.category === realCat ? 'active' : ''}`;
             div.innerText = c;
-            div.onclick = () => { state.category = realCat; resetDateToLatest(); updateLanguage(); refreshData(true); };
+            div.onclick = () => { state.category = realCat; updateLanguage(); refreshData(true); };
             catGroup.appendChild(div);
         });
 
