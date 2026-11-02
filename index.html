@@ -160,13 +160,23 @@
             transition: margin-left 0.3s ease;
         }
 
+        /* 瀑布流：每个日期分组内为 N 列 flex 容器，新卡片放入当前最短列，已有卡片位置不变 */
         .gallery { 
-            column-count: var(--column-count, 3); 
-            column-gap: 30px; 
+            width: 100%;
+        }
+        .masonry {
+            display: flex;
+            align-items: flex-start; /* 关键：列高度按内容计算，不被拉伸，便于比较最短列 */
+            gap: 30px;
+        }
+        .masonry-col {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
         }
         
         .date-group-header {
-            column-span: all;
             break-inside: avoid;
             padding: 15px 20px;
             margin: 30px 0 20px;
@@ -246,6 +256,41 @@ transition: opacity 0.5s ease-in-out;
     gap: 40px; /* 按钮之间的间距 */
     pointer-events: none; 
     transform: none; /* 移除原来的垂直偏移 */
+    z-index: 3; /* 保证控制栏始终在放大后的图片之上 */
+}
+
+/* 灯箱缩放控制组（放大 / 缩小 / 比例 / 重置） */
+.lb-zoom-group {
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.lb-zoom-label {
+    color: white;
+    font-size: 14px;
+    min-width: 52px;
+    text-align: center;
+    user-select: none;
+}
+.lb-btn:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+.lb-btn:disabled:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+/* 灯箱图片缩放与平移 */
+#lightbox-img {
+    transform-origin: center center;
+    transition: transform 0.15s ease;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+#lightbox-img.dragging {
+    transition: none;
 }
 
 /* [新增] 统一灯箱内按钮的可点击属性 */
@@ -303,12 +348,16 @@ transition: opacity 0.5s ease-in-out;
             #sidebar-container { transform: translateX(-100%); }
             #sidebar-container.open { transform: translateX(0); }
             #main-content { margin-left: 0; padding: 70px 15px 20px; }
-            .gallery { column-gap: 15px; }
+            .masonry { gap: 15px; }
             #sidebar { width: 100%; padding: 70px 15px 20px; }
         }
 
         @media (max-width: 500px) {
-            .gallery { column-gap: 10px; }
+            .masonry { gap: 10px; }
+            .lb-nav { gap: 12px; }
+            .lb-btn { width: 44px; height: 44px; }
+            .lb-zoom-group { gap: 4px; }
+            .lb-zoom-label { min-width: 40px; font-size: 12px; }
             .stats-box { padding: 12px; }
         }
     </style>
@@ -403,6 +452,12 @@ transition: opacity 0.5s ease-in-out;
     <button class="lb-btn lb-close" onclick="closeLb()"><i class="fas fa-times"></i></button>
 <div class="lb-nav">
     <button class="lb-btn" onclick="moveLb(-1)"><i class="fas fa-chevron-left"></i></button>
+    <div class="lb-zoom-group">
+        <button id="lb-zoom-out" class="lb-btn" title="缩小" onclick="zoomLb(-0.25)"><i class="fas fa-search-minus"></i></button>
+        <span id="lb-zoom-label" class="lb-zoom-label">100%</span>
+        <button id="lb-zoom-in" class="lb-btn" title="放大" onclick="zoomLb(0.25)"><i class="fas fa-search-plus"></i></button>
+        <button id="lb-zoom-reset" class="lb-btn" title="重置" onclick="resetLbZoom()"><i class="fas fa-undo"></i></button>
+    </div>
     <a id="lb-download" class="lb-btn" target="_blank" rel="noopener">
         <i class="fas fa-download"></i>
     </a>
@@ -479,7 +534,7 @@ const LANG_DICT = {
     const SB_KEY = "sb_publishable_39tYq9zt52DxihifjY_ENw_elQW0FoK";
     const mySupabase = supabase.createClient(SB_URL, SB_KEY);
 
-    let state = { lang: "🇨🇳 简体中文", category: "全部", search: "", dateLimit: null, grid: 3, page: 0, pageSize: 50, allImages: [], currentLbIdx: 0, lastDate: null, totalSearchCount: 0, loading: false, scrollYBeforeLb: 0 };
+    let state = { lang: "🇨🇳 简体中文", category: "全部", search: "", dateLimit: null, grid: 3, page: 0, pageSize: 50, allImages: [], currentLbIdx: 0, lastDate: null, totalSearchCount: 0, loading: false, scrollYBeforeLb: 0, requestId: 0 };
 
     async function initUI() {
         const langSelect = document.getElementById('lang-select');
@@ -577,6 +632,11 @@ async function fetchGlobalTotal() {
 
     function updateGridColumns() {
         document.documentElement.style.setProperty('--column-count', state.grid);
+        // 列数变化时才整体重排；否则不改变已显示图片的位置
+        const existingBlock = document.querySelector('#gallery .masonry');
+        if (existingBlock && existingBlock.children.length !== state.grid) {
+            relayoutGallery();
+        }
     }
 
     function adjustColumnsOnResize() {
@@ -595,7 +655,13 @@ async function fetchGlobalTotal() {
     window.addEventListener('resize', adjustColumnsOnResize);
 
     async function refreshData(isNew = false) {
-        if (isNew) { state.page = 0; state.allImages = []; state.lastDate = null; document.getElementById('gallery').innerHTML = ""; }
+        // 每次查询分配唯一序号，用于丢弃过期的异步响应
+        const reqId = ++state.requestId;
+        if (isNew) {
+            clearTimeout(window.dt); // 取消尚未执行的时间轴防抖刷新
+            state.page = 0; state.allImages = []; state.lastDate = null; state.currentBlock = null; state.loading = false;
+            document.getElementById('gallery').innerHTML = "";
+        }
         const L = LANG_DICT[state.lang];
 
         let query = mySupabase.from('botan_final').select('*', { count: 'exact' });
@@ -604,11 +670,23 @@ async function fetchGlobalTotal() {
         if (state.category !== "全部") query = query.eq('category', state.category);
         query = query.order('production_date', { ascending: false }).range(state.page * state.pageSize, (state.page + 1) * state.pageSize - 1);
 
-        const { data, count, error } = await query;
+        let result;
+        try {
+            result = await query;
+        } catch (e) {
+            result = { data: null, count: null, error: e };
+        }
+        // 若期间已发起新的查询（切换栏目/搜索/时间轴/语言等），丢弃本次过期结果
+        if (reqId !== state.requestId) return;
+
+        const { data, count, error } = result;
         if (error || !data) {
             console.error("Supabase error:", error);
+            if (!isNew) state.page = Math.max(0, state.page - 1); // 回退页码，允许再次滚动重试
+            state.loading = false;
             return;
         }
+        state.loading = false;
 // [新增] // [逻辑处理] 如果搜索结果为 0，清空容器并显示提示
  if (data.length === 0 && state.page === 0) {
      document.getElementById('gallery').innerHTML = `
@@ -652,6 +730,37 @@ async function fetchGlobalTotal() {
         return safeText;
     }
 
+    // 创建一个日期分组下的瀑布流区块（N 列，N = 当前列数）
+    function createMasonryBlock() {
+        const block = document.createElement('div');
+        block.className = 'masonry';
+        for (let i = 0; i < state.grid; i++) {
+            const col = document.createElement('div');
+            col.className = 'masonry-col';
+            block.appendChild(col);
+        }
+        document.getElementById('gallery').appendChild(block);
+        return block;
+    }
+
+    // 找到区块中当前最短的一列
+    function getShortestColumn(block) {
+        let best = block.children[0];
+        for (const col of block.children) {
+            if (col.offsetHeight < best.offsetHeight) best = col;
+        }
+        return best;
+    }
+
+    // 按当前列数整体重排（仅在列数变化时调用，其他情况下不改变已有卡片位置）
+    function relayoutGallery() {
+        if (!state.allImages.length) return;
+        document.getElementById('gallery').innerHTML = "";
+        state.lastDate = null;
+        state.currentBlock = null;
+        renderCards(state.allImages);
+    }
+
     function renderCards(data) {
         const container = document.getElementById('gallery');
         
@@ -664,7 +773,11 @@ async function fetchGlobalTotal() {
                 header.appendChild(icon);
                 header.appendChild(document.createTextNode(` ${item.production_date || ''}`));
                 container.appendChild(header);
+                state.currentBlock = createMasonryBlock(); // 日期标题横跨全宽，其下开始新的瀑布流区块
                 state.lastDate = item.production_date;
+            }
+            if (!state.currentBlock || !container.contains(state.currentBlock)) {
+                state.currentBlock = createMasonryBlock();
             }
 
             const card = document.createElement('div');
@@ -672,13 +785,18 @@ async function fetchGlobalTotal() {
 
             const imgContainer = document.createElement('div');
             imgContainer.className = 'card-img-container';
+            imgContainer.style.aspectRatio = '4 / 3'; // 加载前预留高度，加载后取消，减少跳动
+
 
             const img = document.createElement('img');
             img.src = item.image_url || '';
             img.loading = 'lazy';
             img.alt = item.title || item.description || '博谈档案';
             img.addEventListener('click', () => openLbByUrl(item.image_url));
-            img.addEventListener('load', () => img.classList.add('loaded'));
+            img.addEventListener('load', () => {
+                img.classList.add('loaded');
+                imgContainer.style.aspectRatio = ''; // 使用图片真实比例
+            });
             img.addEventListener('error', () => {
                 img.src = 'https://via.placeholder.com/320x240?text=Load+Error';
             }, { once: true });
@@ -710,7 +828,7 @@ async function fetchGlobalTotal() {
             info.appendChild(description);
             card.appendChild(imgContainer);
             card.appendChild(info);
-            container.appendChild(card);
+            getShortestColumn(state.currentBlock).appendChild(card);
         });
     }
 
@@ -732,6 +850,7 @@ async function fetchGlobalTotal() {
     function updateLb() {
         const item = state.allImages[state.currentLbIdx];
         if (!item) return;
+        resetLbZoom(); // 切换图片时重置为 100%
         document.getElementById('lightbox-img').src = item.image_url;
         document.getElementById('lightbox-img').alt = item.title || item.description || '博谈档案';
         document.getElementById('lb-caption').innerHTML = highlightSearchTerm(item.description || '');
@@ -751,7 +870,8 @@ async function fetchGlobalTotal() {
         updateLb();
     }
 
-    function closeLb() { 
+    function closeLb() {
+        resetLbZoom(); 
         document.getElementById('lightbox').style.display = 'none'; 
         document.body.classList.remove('body-scroll-lock');
         document.body.style.removeProperty('--scroll-lock-top');
@@ -763,6 +883,87 @@ async function fetchGlobalTotal() {
             e.preventDefault();
         }
     }, { passive: false });
+
+    // ===== 灯箱缩放：范围 100%–400%，滚轮缩放、放大后拖动平移、双击在 100% 与 200% 之间切换 =====
+    const LB_MIN_SCALE = 1, LB_MAX_SCALE = 4, LB_STEP = 0.25;
+    const lbZoom = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, baseX: 0, baseY: 0 };
+
+    // 限制平移范围，防止图片被拖出可视区域
+    function clampLbPan() {
+        const img = document.getElementById('lightbox-img');
+        const maxX = Math.max(0, (img.offsetWidth * lbZoom.scale - window.innerWidth) / 2);
+        const maxY = Math.max(0, (img.offsetHeight * lbZoom.scale - window.innerHeight) / 2);
+        lbZoom.x = Math.min(maxX, Math.max(-maxX, lbZoom.x));
+        lbZoom.y = Math.min(maxY, Math.max(-maxY, lbZoom.y));
+    }
+
+    function applyLbZoom() {
+        const img = document.getElementById('lightbox-img');
+        if (lbZoom.scale <= LB_MIN_SCALE) { lbZoom.x = 0; lbZoom.y = 0; }
+        clampLbPan();
+        img.style.transform = `translate(${lbZoom.x}px, ${lbZoom.y}px) scale(${lbZoom.scale})`;
+        img.style.cursor = lbZoom.scale > LB_MIN_SCALE ? (lbZoom.dragging ? 'grabbing' : 'grab') : 'default';
+        document.getElementById('lb-zoom-label').innerText = `${Math.round(lbZoom.scale * 100)}%`;
+        document.getElementById('lb-zoom-in').disabled = lbZoom.scale >= LB_MAX_SCALE;
+        document.getElementById('lb-zoom-out').disabled = lbZoom.scale <= LB_MIN_SCALE;
+    }
+
+    function setLbScale(scale) {
+        lbZoom.scale = Math.min(LB_MAX_SCALE, Math.max(LB_MIN_SCALE, Math.round(scale * 100) / 100));
+        applyLbZoom();
+    }
+
+    function zoomLb(delta) {
+        setLbScale(lbZoom.scale + delta);
+    }
+
+    function resetLbZoom() {
+        lbZoom.scale = 1; lbZoom.x = 0; lbZoom.y = 0; lbZoom.dragging = false;
+        document.getElementById('lightbox-img').classList.remove('dragging');
+        applyLbZoom();
+    }
+
+    const lightboxEl = document.getElementById('lightbox');
+    const lbImgEl = document.getElementById('lightbox-img');
+
+    // 滚轮缩放（文字说明区域保留正常滚动）
+    lightboxEl.addEventListener('wheel', (e) => {
+        if (lightboxEl.style.display !== 'flex') return;
+        if (e.target.closest && e.target.closest('#lb-caption')) return;
+        e.preventDefault();
+        zoomLb(e.deltaY < 0 ? LB_STEP : -LB_STEP);
+    }, { passive: false });
+
+    // 放大后按住拖动平移
+    lbImgEl.addEventListener('pointerdown', (e) => {
+        if (lbZoom.scale <= LB_MIN_SCALE) return;
+        e.preventDefault();
+        lbZoom.dragging = true;
+        lbZoom.startX = e.clientX; lbZoom.startY = e.clientY;
+        lbZoom.baseX = lbZoom.x; lbZoom.baseY = lbZoom.y;
+        lbImgEl.setPointerCapture(e.pointerId);
+        lbImgEl.classList.add('dragging');
+        applyLbZoom();
+    });
+    lbImgEl.addEventListener('pointermove', (e) => {
+        if (!lbZoom.dragging) return;
+        lbZoom.x = lbZoom.baseX + (e.clientX - lbZoom.startX);
+        lbZoom.y = lbZoom.baseY + (e.clientY - lbZoom.startY);
+        applyLbZoom();
+    });
+    const endLbDrag = () => {
+        if (!lbZoom.dragging) return;
+        lbZoom.dragging = false;
+        lbImgEl.classList.remove('dragging');
+        applyLbZoom();
+    };
+    lbImgEl.addEventListener('pointerup', endLbDrag);
+    lbImgEl.addEventListener('pointercancel', endLbDrag);
+
+    // 双击在 100% 与 200% 之间切换
+    lbImgEl.addEventListener('dblclick', () => {
+        if (lbZoom.scale > LB_MIN_SCALE) resetLbZoom(); else setLbScale(2);
+    });
 
     function triggerSearch() { 
         state.search = document.getElementById('search-input').value.trim(); 
@@ -802,7 +1003,11 @@ async function fetchGlobalTotal() {
             if (state.allImages.length < state.totalSearchCount && !state.loading) {
                 state.loading = true;
                 state.page++;
-                refreshData().then(() => state.loading = false);
+                // refreshData 内部会在请求结束时复位 state.loading；异常时在此兜底复位
+                refreshData().catch((e) => {
+                    console.error("Load error:", e);
+                    state.loading = false;
+                });
             }
         }
     });
